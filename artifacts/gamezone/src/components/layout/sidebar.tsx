@@ -1,20 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { Gamepad2, Trophy, Wallet, Upload, User, LayoutDashboard, CircleDot } from "lucide-react";
+import { CircleDot } from "lucide-react";
+import { navLinks } from "./nav-links";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const [location] = useLocation();
 
-  const links = [
-    { href: "/", label: "Home", icon: LayoutDashboard },
-    { href: "/games", label: "All Games", icon: Gamepad2 },
-    { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-    { href: "/earnings", label: "Earnings", icon: Wallet },
-    { href: "/upload", label: "Upload Game", icon: Upload },
-    { href: "/dashboard", label: "Profile", icon: User },
-    { href: "/dashboard", label: "Platform Stats", icon: LayoutDashboard },
-  ];
+  const links = navLinks;
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar hidden md:flex flex-col flex-shrink-0 h-screen sticky top-0">
@@ -35,7 +28,7 @@ export function Sidebar() {
             (link.href !== '/' && location.startsWith(link.href));
             
           return (
-            <Link key={link.href} href={link.href}>
+            <Link key={`${link.href}-${link.label}`} href={link.href}>
               <Button
                 variant="ghost"
                 className={cn(
