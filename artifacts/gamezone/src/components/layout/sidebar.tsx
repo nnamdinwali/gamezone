@@ -12,7 +12,7 @@ export function Sidebar() {
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { href: "/earnings", label: "Earnings", icon: Wallet },
     { href: "/upload", label: "Upload Game", icon: Upload },
-    { href: "/profile/1", label: "Profile", icon: User },
+    { href: "/dashboard", label: "Profile", icon: User },
     { href: "/dashboard", label: "Platform Stats", icon: LayoutDashboard },
   ];
 
