@@ -4,6 +4,7 @@ import { LogOut, UserRound } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
@@ -24,7 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
         <div className="flex-1 p-6 md:p-8 overflow-y-auto pb-24 md:pb-8">
           <div className="max-w-7xl mx-auto w-full">
-            {children}
+            <ErrorBoundary>{children}</ErrorBoundary>
           </div>
         </div>
       </main>
