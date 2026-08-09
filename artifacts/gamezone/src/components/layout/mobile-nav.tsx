@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import { Menu, X, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,8 +32,8 @@ export function MobileNav() {
         <Menu className="h-5 w-5" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex">
+      {open && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100] flex">
           <div
             className="absolute inset-0 bg-black/70"
             onClick={() => setOpen(false)}
@@ -80,7 +81,8 @@ export function MobileNav() {
               })}
             </div>
           </nav>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
