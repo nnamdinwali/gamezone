@@ -1,0 +1,627 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: GameZone API - gaming platform where users play games and earn rewards
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: games
+    description: Game management
+  - name: users
+    description: User profiles
+  - name: sessions
+    description: Play sessions
+  - name: leaderboard
+    description: Leaderboard and rankings
+  - name: earnings
+    description: Earnings and withdrawals
+  - name: dashboard
+    description: Dashboard stats
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /games:
+    get:
+      operationId: listGames
+      tags: [games]
+      summary: List all games
+      parameters:
+        - in: query
+          name: genre
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+    post:
+      operationId: createGame
+      tags: [games]
+      summary: Upload a new game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+
+  /games/trending:
+    get:
+      operationId: getTrendingGames
+      tags: [games]
+      summary: Get trending games by play count
+      responses:
+        "200":
+          description: Trending games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+
+  /games/{id}:
+    get:
+      operationId: getGame
+      tags: [games]
+      summary: Get a game by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Game details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateGame
+      tags: [games]
+      summary: Update a game
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameUpdate"
+      responses:
+        "200":
+          description: Updated game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+    delete:
+      operationId: deleteGame
+      tags: [games]
+      summary: Delete a game
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [users]
+      summary: Get or create the signed-in user's profile
+      responses:
+        "200":
+          description: Signed-in user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}/stats:
+    get:
+      operationId: getUserStats
+      tags: [users]
+      summary: Get a user's game stats and earnings summary
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: User stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+
+  /play-sessions:
+    get:
+      operationId: listPlaySessions
+      tags: [sessions]
+      summary: List play sessions for a user
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: number
+          required: false
+        - in: query
+          name: gameId
+          schema:
+            type: number
+          required: false
+      responses:
+        "200":
+          description: Play sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlaySession"
+    post:
+      operationId: startPlaySession
+      tags: [sessions]
+      summary: Start a play session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaySessionInput"
+      responses:
+        "201":
+          description: Play session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaySession"
+
+  /play-sessions/{id}/end:
+    patch:
+      operationId: endPlaySession
+      tags: [sessions]
+      summary: End a play session and award points
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaySessionEnd"
+      responses:
+        "200":
+          description: Updated play session with earned points
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaySession"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get top earners leaderboard
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /earnings:
+    get:
+      operationId: listEarnings
+      tags: [earnings]
+      summary: List earnings for a user
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: number
+          required: false
+      responses:
+        "200":
+          description: Earnings list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Earning"
+
+  /earnings/withdraw:
+    post:
+      operationId: requestWithdrawal
+      tags: [earnings]
+      summary: Request a payout withdrawal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawalInput"
+      responses:
+        "201":
+          description: Withdrawal requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Earning"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get platform-wide stats
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Game:
+      type: object
+      required: [id, title, description, genre, thumbnailUrl, gameUrl, creatorName, playCount, rating, rewardPerMinute, createdAt]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        description:
+          type: string
+        genre:
+          type: string
+        thumbnailUrl:
+          type: string
+        gameUrl:
+          type: string
+        creatorName:
+          type: string
+        playCount:
+          type: number
+        rating:
+          type: number
+        rewardPerMinute:
+          type: number
+        createdAt:
+          type: string
+
+    GameInput:
+      type: object
+      required: [title, description, genre, thumbnailUrl, gameUrl, creatorName, rewardPerMinute]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        genre:
+          type: string
+        thumbnailUrl:
+          type: string
+        gameUrl:
+          type: string
+        creatorName:
+          type: string
+        rewardPerMinute:
+          type: number
+
+    GameUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        genre:
+          type: string
+        thumbnailUrl:
+          type: string
+        gameUrl:
+          type: string
+        rewardPerMinute:
+          type: number
+
+    User:
+      type: object
+      required: [id, username, email, avatarUrl, balance, totalEarnings, gamesPlayed, createdAt]
+      properties:
+        id:
+          type: number
+        username:
+          type: string
+        email:
+          type: string
+        avatarUrl:
+          type: string
+        balance:
+          type: number
+        totalEarnings:
+          type: number
+        gamesPlayed:
+          type: number
+        createdAt:
+          type: string
+
+    UserInput:
+      type: object
+      required: [username, email]
+      properties:
+        username:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+
+    UserStats:
+      type: object
+      required: [userId, totalPlayTime, totalEarnings, gamesPlayed, favoriteGenre, recentSessions]
+      properties:
+        userId:
+          type: number
+        totalPlayTime:
+          type: number
+        totalEarnings:
+          type: number
+        gamesPlayed:
+          type: number
+        favoriteGenre:
+          type: ["string", "null"]
+        recentSessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaySession"
+
+    PlaySession:
+      type: object
+      required: [id, userId, gameId, status, pointsEarned, startedAt]
+      properties:
+        id:
+          type: number
+        userId:
+          type: number
+        gameId:
+          type: number
+        gameName:
+          type: ["string", "null"]
+        status:
+          type: string
+        pointsEarned:
+          type: number
+        durationMinutes:
+          type: ["number", "null"]
+        startedAt:
+          type: string
+        endedAt:
+          type: ["string", "null"]
+
+    PlaySessionInput:
+      type: object
+      required: [userId, gameId]
+      properties:
+        userId:
+          type: number
+        gameId:
+          type: number
+
+    PlaySessionEnd:
+      type: object
+      required: [durationMinutes]
+      properties:
+        durationMinutes:
+          type: number
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, userId, username, avatarUrl, totalEarnings, gamesPlayed]
+      properties:
+        rank:
+          type: number
+        userId:
+          type: number
+        username:
+          type: string
+        avatarUrl:
+          type: string
+        totalEarnings:
+          type: number
+        gamesPlayed:
+          type: number
+
+    Earning:
+      type: object
+      required: [id, userId, amount, type, status, createdAt]
+      properties:
+        id:
+          type: number
+        userId:
+          type: number
+        amount:
+          type: number
+        type:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+
+    WithdrawalInput:
+      type: object
+      required: [userId, amount]
+      properties:
+        userId:
+          type: number
+        amount:
+          type: number
+
+    DashboardStats:
+      type: object
+      required: [totalGames, totalPlayers, totalPayouts, activeSessionsCount, topGenres]
+      properties:
+        totalGames:
+          type: number
+        totalPlayers:
+          type: number
+        totalPayouts:
+          type: number
+        activeSessionsCount:
+          type: number
+        topGenres:
+          type: array
+          items:
+            type: object
+            required: [genre, count]
+            properties:
+              genre:
+                type: string
+              count:
+                type: number
