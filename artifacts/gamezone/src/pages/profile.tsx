@@ -4,9 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock, Gamepad2, Coins, Calendar, Flame, Mail, Wallet, Hash } from "lucide-react";
+import { Trophy, Clock, Gamepad2, Coins, Calendar, Flame, Activity, Timer, Zap } from "lucide-react";
 import { format } from "date-fns";
-import { formatNumber } from "@/lib/utils";
 import { useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 
@@ -49,6 +48,15 @@ export function ProfilePage() {
     );
   }
 
+  // Derived gameplay stats. totalPlayTime is in minutes.
+  const sessions = stats.recentSessions;
+  const avgSessionMinutes = sessions.length
+    ? Math.round(sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0) / sessions.length)
+    : 0;
+  const earningsPerHour = stats.totalPlayTime > 0
+    ? stats.totalEarnings / (stats.totalPlayTime / 60)
+    : 0;
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
       {/* Profile Header */}
@@ -85,37 +93,35 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* Account Details - only the owner sees private fields like email */}
-      {isOwnProfile && (
-        <Card className="bg-card/50">
-          <CardContent className="p-6 space-y-4">
-            <h2 className="text-lg font-bold font-heading uppercase tracking-tight">Account Details</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Email</p>
-                  <p className="text-sm font-medium truncate" title={user.email}>{user.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Available Balance</p>
-                  <p className="text-sm font-mono font-bold">{formatCurrency(user.balance || 0)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Hash className="w-4 h-4 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Player ID</p>
-                  <p className="text-sm font-mono font-bold">#{user.id}</p>
-                </div>
+      {/* Performance stats - private account details (email, id) are not useful here */}
+      <Card className="bg-card/50">
+        <CardContent className="p-6 space-y-4">
+          <h2 className="text-lg font-bold font-heading uppercase tracking-tight">Performance</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3">
+              <Activity className="w-4 h-4 text-primary shrink-0" />
+              <div>
+                <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Recent Sessions</p>
+                <p className="text-sm font-mono font-bold">{stats.recentSessions.length}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex items-center gap-3">
+              <Timer className="w-4 h-4 text-secondary shrink-0" />
+              <div>
+                <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Avg Session</p>
+                <p className="text-sm font-mono font-bold">{avgSessionMinutes} mins</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Zap className="w-4 h-4 text-accent shrink-0" />
+              <div>
+                <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Earned Per Hour</p>
+                <p className="text-sm font-mono font-bold">{formatCurrency(earningsPerHour)}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
