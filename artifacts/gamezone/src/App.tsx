@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
+import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
+import { navigate } from 'wouter/use-browser-location';
 import { useEffect, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 
@@ -32,6 +33,25 @@ const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+
+// Clerk hands us either an absolute URL or a path that may or may not already
+// include the deployment base path (e.g. "/gamezone"). Normalise both so that
+// navigation works identically at the domain root and in a sub-directory
+// deployment such as GitHub Pages.
+function toAppPath(to: string) {
+  let path = to;
+  if (/^https?:\/\//i.test(path)) {
+    const url = new URL(path);
+    path = `${url.pathname}${url.search}${url.hash}`;
+  }
+  if (!path.startsWith('/')) path = `/${path}`;
+  if (basePath && !path.startsWith(`${basePath}/`) && path !== basePath) {
+    path = `${basePath}${path}`;
+  }
+  return path;
+}
+
+const afterAuthUrl = `${basePath}/`;
 
 const clerkAppearance = {
   theme: shadcn,
@@ -142,8 +162,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
-      <Route path="/sign-in/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>} />
-      <Route path="/sign-up/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>} />
+      <Route path="/sign-in/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} fallbackRedirectUrl={afterAuthUrl} /></div>} />
+      <Route path="/sign-up/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} fallbackRedirectUrl={afterAuthUrl} signInFallbackRedirectUrl={afterAuthUrl} /></div>} />
       <Route path="/games"><Protected><GamesPage /></Protected></Route>
       <Route path="/games/:id"><Protected><GameDetailPage /></Protected></Route>
       <Route path="/play/:id"><Protected><PlayPage /></Protected></Route>
@@ -158,9 +178,8 @@ function Router() {
 }
 
 function ClerkApp() {
-  const [, setLocation] = useLocation();
   return (
-    <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your ROCKCITY GAMES account' } }, signUp: { start: { title: 'Join ROCKCITY GAMES', subtitle: 'Play smart, earn daily,' } } }} routerPush={(to) => setLocation(to.replace(basePath, '') || '/')} routerReplace={(to) => setLocation(to.replace(basePath, '') || '/')} >
+    <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} signInFallbackRedirectUrl={afterAuthUrl} signUpFallbackRedirectUrl={afterAuthUrl} afterSignOutUrl={afterAuthUrl} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your ROCKCITY GAMES account' } }, signUp: { start: { title: 'Join ROCKCITY GAMES', subtitle: 'Play smart, earn daily,' } } }} routerPush={(to) => navigate(toAppPath(to))} routerReplace={(to) => navigate(toAppPath(to), { replace: true })} >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <WouterRouter base={basePath}><Router /></WouterRouter>
