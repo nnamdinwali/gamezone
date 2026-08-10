@@ -21,7 +21,7 @@ export function getNavLinks({
     { href: "/games", label: "All Games", icon: Gamepad2 },
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { href: "/earnings", label: "Earnings", icon: Wallet },
-    { href: profileId ? `/profile/${profileId}` : "/dashboard", label: "Profile", icon: User },
+    { href: profileId ? `/profile/${profileId}` : "/profile", label: "Profile", icon: User },
   ];
 
   if (isAdmin) {
