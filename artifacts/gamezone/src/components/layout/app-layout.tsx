@@ -19,7 +19,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="flex items-center justify-between gap-3 border-b border-border bg-background/80 px-6 py-3 backdrop-blur md:px-8">
           <MobileNav />
           <div className="flex items-center gap-3">
-          <Link href={profileId ? `/profile/${profileId}` : "/dashboard"} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" data-testid="link-session-profile">
+          <Link href={profileId ? `/profile/${profileId}` : "/profile"} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" data-testid="link-session-profile">
             <UserRound className="h-4 w-4" /> {user?.firstName || user?.username || "Your profile"}
           </Link>
           <button type="button" onClick={() => signOut({ redirectUrl: import.meta.env.BASE_URL || "/" })} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-muted-foreground hover:border-primary hover:text-primary" data-testid="button-session-logout">
