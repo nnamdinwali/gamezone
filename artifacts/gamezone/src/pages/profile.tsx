@@ -12,7 +12,7 @@ import { useCurrentUser } from "@/lib/current-user";
 export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
   const formatCurrency = useMoney();
-  const { data: currentUser } = useCurrentUser();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentUser();
 
   // Fall back to the signed-in player's own profile when no id is in the URL.
   const routeId = params?.id ? parseInt(params.id, 10) : NaN;
@@ -27,7 +27,7 @@ export function ProfilePage() {
     query: { enabled: id > 0, queryKey: getGetUserStatsQueryKey(id) }
   });
 
-  if (isUserLoading || isStatsLoading) {
+  if (isCurrentUserLoading || id <= 0 || isUserLoading || isStatsLoading) {
     return (
       <div className="space-y-8">
         <Skeleton className="h-64 w-full rounded-3xl" />
