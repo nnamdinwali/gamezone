@@ -4,20 +4,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock, Gamepad2, Coins, Calendar, Flame } from "lucide-react";
+import { Trophy, Clock, Gamepad2, Coins, Calendar, Flame, Mail, Wallet, Hash } from "lucide-react";
 import { format } from "date-fns";
 import { formatNumber } from "@/lib/utils";
+import { useMoney } from "@/lib/currency";
+import { useCurrentUser } from "@/lib/current-user";
 
 export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
-  const id = params?.id ? parseInt(params.id, 10) : 1;
+  const formatCurrency = useMoney();
+  const { data: currentUser } = useCurrentUser();
+
+  // Fall back to the signed-in player's own profile when no id is in the URL.
+  const routeId = params?.id ? parseInt(params.id, 10) : NaN;
+  const id = Number.isFinite(routeId) ? routeId : Number(currentUser?.id ?? 0);
+  const isOwnProfile = Boolean(currentUser?.id && Number(currentUser.id) === id);
 
   const { data: user, isLoading: isUserLoading } = useGetUser(id, {
-    query: { enabled: !!id, queryKey: getGetUserQueryKey(id) }
+    query: { enabled: id > 0, queryKey: getGetUserQueryKey(id) }
   });
 
   const { data: stats, isLoading: isStatsLoading } = useGetUserStats(id, {
-    query: { enabled: !!id, queryKey: getGetUserStatsQueryKey(id) }
+    query: { enabled: id > 0, queryKey: getGetUserStatsQueryKey(id) }
   });
 
   if (isUserLoading || isStatsLoading) {
@@ -60,7 +68,7 @@ export function ProfilePage() {
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
               <h1 className="text-3xl md:text-5xl font-bold font-heading uppercase tracking-tighter text-glow-primary">{user.username}</h1>
               <Badge variant="outline" className="w-fit mx-auto md:mx-0 border-primary/50 text-primary">
-                PRO PLAYER
+                {isOwnProfile ? "YOUR PROFILE" : "PLAYER"}
               </Badge>
             </div>
             <p className="text-muted-foreground flex items-center justify-center md:justify-start gap-2 text-sm font-mono">
@@ -71,11 +79,43 @@ export function ProfilePage() {
           <div className="bg-background/80 backdrop-blur border border-border rounded-2xl p-4 flex flex-col items-center min-w-40">
             <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest mb-1">Lifetime Earned</span>
             <span className="font-mono font-bold text-3xl text-accent flex items-center gap-2 text-glow-accent">
-              <Coins className="w-5 h-5" /> {formatNumber(stats.totalEarnings)}
+              <Coins className="w-5 h-5" /> {formatCurrency(stats.totalEarnings)}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Account Details - only the owner sees private fields like email */}
+      {isOwnProfile && (
+        <Card className="bg-card/50">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-lg font-bold font-heading uppercase tracking-tight">Account Details</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Email</p>
+                  <p className="text-sm font-medium truncate" title={user.email}>{user.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Wallet className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Available Balance</p>
+                  <p className="text-sm font-mono font-bold">{formatCurrency(user.balance || 0)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Hash className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Player ID</p>
+                  <p className="text-sm font-mono font-bold">#{user.id}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

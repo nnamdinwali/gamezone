@@ -1,13 +1,17 @@
 import { Link, useLocation } from "wouter";
 import { CircleDot } from "lucide-react";
-import { navLinks } from "./nav-links";
+import { getNavLinks } from "./nav-links";
+import { useCurrentUser } from "@/lib/current-user";
+import { useIsAdmin } from "@/lib/is-admin";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { data: currentUser } = useCurrentUser();
+  const { isAdmin } = useIsAdmin();
 
-  const links = navLinks;
+  const links = getNavLinks({ profileId: currentUser?.id, isAdmin });
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar hidden md:flex flex-col flex-shrink-0 h-screen sticky top-0">

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Medal, Coins, Gamepad2 } from "lucide-react";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 
 export function LeaderboardPage() {
   const { data: leaderboard, isLoading } = useGetLeaderboard({

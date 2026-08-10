@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Wallet, ArrowDownToLine, History, Coins, ArrowUpRight } from "lucide-react";
 import { format } from "date-fns";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import { useCurrentUser } from "@/lib/current-user";
 
 export function EarningsPage() {

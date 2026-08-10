@@ -6,6 +6,8 @@ import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
 import { navigate } from 'wouter/use-browser-location';
 import { useEffect, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
+import { CurrencyProvider } from '@/lib/currency';
+import { useIsAdmin } from '@/lib/is-admin';
 
 import { HomePage } from '@/pages/home';
 import { GamesPage } from '@/pages/games';
@@ -147,6 +149,13 @@ function Protected({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
+function AdminOnly({ children }: { children: React.ReactNode }) {
+  const { isAdmin, isLoaded } = useIsAdmin();
+  if (!isLoaded) return <div className="min-h-[50vh]" />;
+  if (!isAdmin) return <Redirect to="/" />;
+  return <>{children}</>;
+}
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const prevUserId = useRef<string | null | undefined>(undefined);
@@ -169,7 +178,7 @@ function Router() {
       <Route path="/play/:id"><Protected><PlayPage /></Protected></Route>
       <Route path="/leaderboard"><Protected><LeaderboardPage /></Protected></Route>
       <Route path="/earnings"><Protected><EarningsPage /></Protected></Route>
-      <Route path="/upload"><Protected><UploadPage /></Protected></Route>
+      <Route path="/upload"><Protected><AdminOnly><UploadPage /></AdminOnly></Protected></Route>
       <Route path="/profile/:id"><Protected><ProfilePage /></Protected></Route>
       <Route path="/dashboard"><Protected><DashboardPage /></Protected></Route>
       <Route component={NotFound} />
@@ -181,8 +190,10 @@ function ClerkApp() {
   return (
     <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} signInFallbackRedirectUrl={afterAuthUrl} signUpFallbackRedirectUrl={afterAuthUrl} afterSignOutUrl={afterAuthUrl} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your ROCKCITY GAMES account' } }, signUp: { start: { title: 'Join ROCKCITY GAMES', subtitle: 'Play smart, earn daily,' } } }} routerPush={(to) => navigate(toAppPath(to))} routerReplace={(to) => navigate(toAppPath(to), { replace: true })} >
       <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
-        <WouterRouter base={basePath}><Router /></WouterRouter>
+        <CurrencyProvider>
+          <ClerkQueryClientCacheInvalidator />
+          <WouterRouter base={basePath}><Router /></WouterRouter>
+        </CurrencyProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );
