@@ -13,11 +13,13 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Wallet, ArrowDownToLine, History, Coins, ArrowUpRight } from "lucide-react";
 import { format } from "date-fns";
-import { formatNumber } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 
 export function EarningsPage() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  // Balances are stored in the base currency; the visitor sees their local one.
+  const { currency, rate, format: formatMoney } = useCurrency();
 
   const { data: user, isLoading: isUserLoading, refetch: refetchUser } = useCurrentUser();
   const userId = user?.id;
@@ -31,8 +33,11 @@ export function EarningsPage() {
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseInt(withdrawAmount, 10);
-    
+    // The field is typed in the visitor's local currency: convert back to the
+    // base currency before it ever touches a balance.
+    const localAmount = parseFloat(withdrawAmount);
+    const amount = Math.round((localAmount / (rate || 1)) * 100) / 100;
+
     if (isNaN(amount) || amount <= 0) {
       toast({ title: "Invalid Amount", description: "Please enter a valid amount.", variant: "destructive" });
       return;
@@ -47,7 +52,7 @@ export function EarningsPage() {
       { data: { userId: userId ?? 0, amount } },
       {
         onSuccess: () => {
-          toast({ title: "Withdrawal Requested", description: `${formatNumber(amount)} points are being processed.`, variant: "success" });
+          toast({ title: "Withdrawal Requested", description: `${formatMoney(amount)} is being processed.`, variant: "success" });
           setWithdrawAmount("");
           refetchUser();
           refetchEarnings();
@@ -84,26 +89,26 @@ export function EarningsPage() {
               ) : (
                 <div className="flex items-baseline gap-2 text-glow-accent text-accent">
                   <Coins className="w-8 h-8" />
-                  <span className="text-5xl font-mono font-bold tracking-tighter">{formatNumber(user?.balance || 0)}</span>
-                  <span className="text-muted-foreground font-sans text-sm uppercase font-bold ml-1">pts</span>
+                  <span className="text-5xl font-mono font-bold tracking-tighter">{formatMoney(user?.balance || 0)}</span>
                 </div>
               )}
               <p className="text-sm text-muted-foreground mt-2 font-mono">
-                Total lifetime earned: {isUserLoading ? <Skeleton className="w-16 h-4 inline-block" /> : formatNumber(user?.totalEarnings || 0)}
+                Total lifetime earned: {isUserLoading ? <Skeleton className="w-16 h-4 inline-block" /> : formatMoney(user?.totalEarnings || 0)}
               </p>
             </div>
 
             <div className="pt-6 border-t border-border">
               <form onSubmit={handleWithdraw} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amount" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Withdraw Amount (pts)</Label>
+                  <Label htmlFor="amount" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Withdraw Amount ({currency})</Label>
                   <div className="relative">
                     <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input 
                       id="amount"
                       type="number"
-                      min="1"
-                      placeholder="1000"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
                       className="pl-10 font-mono text-lg h-12"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -168,7 +173,7 @@ export function EarningsPage() {
                         <div className={`font-mono font-bold text-lg flex items-center gap-1 ${
                           isWithdrawal ? 'text-destructive' : 'text-success'
                         }`}>
-                          {isWithdrawal ? '-' : '+'}{formatNumber(earning.amount)}
+                          {isWithdrawal ? '-' : '+'}{formatMoney(earning.amount)}
                         </div>
                         
                         <Badge variant={
