@@ -30,15 +30,73 @@ function detectLocale() {
   return navigator.language || "en-US";
 }
 
+/**
+ * IANA time zone -> region. The browser language is unreliable for location:
+ * most phones report "en-US" no matter where the owner actually is, which is
+ * why visitors in Lagos were being shown dollars. The device time zone tracks
+ * where the person really is, so we read that first and only fall back to the
+ * language tag.
+ */
+const TIMEZONE_REGION: Record<string, string> = {
+  "Africa/Lagos": "NG", "Africa/Abidjan": "CI", "Africa/Accra": "GH",
+  "Africa/Nairobi": "KE", "Africa/Kampala": "UG", "Africa/Dar_es_Salaam": "TZ",
+  "Africa/Johannesburg": "ZA", "Africa/Cairo": "EG", "Africa/Casablanca": "MA",
+  "Europe/London": "GB", "Europe/Dublin": "IE", "Europe/Paris": "FR",
+  "Europe/Berlin": "DE", "Europe/Madrid": "ES", "Europe/Rome": "IT",
+  "Europe/Amsterdam": "NL", "Europe/Lisbon": "PT", "Europe/Brussels": "BE",
+  "Europe/Vienna": "AT", "Europe/Helsinki": "FI", "Europe/Athens": "GR",
+  "Europe/Stockholm": "SE", "Europe/Oslo": "NO", "Europe/Copenhagen": "DK",
+  "Europe/Zurich": "CH", "Europe/Warsaw": "PL", "Europe/Prague": "CZ",
+  "Europe/Moscow": "RU", "Europe/Kiev": "UA", "Europe/Kyiv": "UA",
+  "Europe/Istanbul": "TR", "Asia/Dubai": "AE", "Asia/Riyadh": "SA",
+  "Asia/Karachi": "PK", "Asia/Dhaka": "BD", "Asia/Kolkata": "IN",
+  "Asia/Calcutta": "IN", "Asia/Manila": "PH", "Asia/Jakarta": "ID",
+  "Asia/Kuala_Lumpur": "MY", "Asia/Singapore": "SG", "Asia/Tokyo": "JP",
+  "Asia/Shanghai": "CN", "Asia/Seoul": "KR",
+  "America/New_York": "US", "America/Chicago": "US", "America/Denver": "US",
+  "America/Los_Angeles": "US", "America/Phoenix": "US", "America/Anchorage": "US",
+  "America/Toronto": "CA", "America/Vancouver": "CA", "America/Edmonton": "CA",
+  "America/Sao_Paulo": "BR", "America/Mexico_City": "MX",
+  "America/Argentina/Buenos_Aires": "AR",
+  "Australia/Sydney": "AU", "Australia/Melbourne": "AU", "Australia/Perth": "AU",
+  "Australia/Brisbane": "AU", "Pacific/Auckland": "NZ",
+};
+
+/** Region from the device time zone, e.g. "Africa/Lagos" -> "NG". */
+function regionFromTimeZone(): string | null {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!zone) return null;
+    if (TIMEZONE_REGION[zone]) return TIMEZONE_REGION[zone];
+    // Unlisted zone: try the continent so at least Africa/* is not read as USD.
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Region from the browser language tag, e.g. "en-NG" -> "NG". */
+function regionFromLocale(): string | null {
+  try {
+    const region = new Intl.Locale(detectLocale()).maximize().region;
+    return region ?? null;
+  } catch {
+    const parts = detectLocale().split("-");
+    const tail = parts[1];
+    return tail && tail.length === 2 ? tail.toUpperCase() : null;
+  }
+}
+
 function detectCurrency(): string {
   const saved = typeof localStorage !== "undefined" ? localStorage.getItem(PREF_KEY) : null;
   if (saved) return saved;
-  try {
-    const region = new Intl.Locale(detectLocale()).maximize().region;
-    if (region && REGION_CURRENCY[region]) return REGION_CURRENCY[region];
-  } catch {
-    /* older browsers: fall through to base */
-  }
+
+  const zoneRegion = regionFromTimeZone();
+  if (zoneRegion && REGION_CURRENCY[zoneRegion]) return REGION_CURRENCY[zoneRegion];
+
+  const localeRegion = regionFromLocale();
+  if (localeRegion && REGION_CURRENCY[localeRegion]) return REGION_CURRENCY[localeRegion];
+
   return BASE_CURRENCY;
 }
 

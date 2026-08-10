@@ -1,4 +1,4 @@
-import { Gamepad2, Trophy, Wallet, Upload, User, LayoutDashboard, BarChart3 } from "lucide-react";
+import { Gamepad2, Trophy, Wallet, Upload, User, LayoutDashboard } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type NavLink = { href: string; label: string; icon: LucideIcon };
@@ -22,7 +22,6 @@ export function getNavLinks({
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { href: "/earnings", label: "Earnings", icon: Wallet },
     { href: profileId ? `/profile/${profileId}` : "/dashboard", label: "Profile", icon: User },
-    { href: "/dashboard", label: "Platform Stats", icon: BarChart3 },
   ];
 
   if (isAdmin) {
