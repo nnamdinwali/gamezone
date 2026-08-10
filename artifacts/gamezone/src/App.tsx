@@ -179,6 +179,7 @@ function Router() {
       <Route path="/leaderboard"><Protected><LeaderboardPage /></Protected></Route>
       <Route path="/earnings"><Protected><EarningsPage /></Protected></Route>
       <Route path="/upload"><Protected><AdminOnly><UploadPage /></AdminOnly></Protected></Route>
+      <Route path="/profile"><Protected><ProfilePage /></Protected></Route>
       <Route path="/profile/:id"><Protected><ProfilePage /></Protected></Route>
       <Route path="/dashboard"><Protected><DashboardPage /></Protected></Route>
       <Route component={NotFound} />
