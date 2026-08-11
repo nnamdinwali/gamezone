@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
+import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
 import { navigate } from 'wouter/use-browser-location';
 import { useEffect, useRef } from 'react';
@@ -172,6 +173,27 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+/**
+ * Keep the API client in sync with Clerk's React auth state.
+ *
+ * Reading window.Clerk directly is racy: the global can exist before its
+ * session has finished loading, so the first /users/me request is sent
+ * without a bearer token and React Query does not retry it. Clerk's supported
+ * getToken() hook always reads the active session and refreshes the token when
+ * needed.
+ */
+function ClerkApiAuthBridge() {
+  const { getToken } = useAuth();
+
+  setAuthTokenGetter(getToken);
+
+  useEffect(() => {
+    return () => setAuthTokenGetter(null);
+  }, [getToken]);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -197,6 +219,7 @@ function ClerkApp() {
     <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} signInFallbackRedirectUrl={afterAuthUrl} signUpFallbackRedirectUrl={afterAuthUrl} afterSignOutUrl={afterAuthUrl} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your ROCKCITY GAMES account' } }, signUp: { start: { title: 'Join ROCKCITY GAMES', subtitle: 'Play smart, earn daily,' } } }} routerPush={(to) => navigate(toAppPath(to))} routerReplace={(to) => navigate(toAppPath(to), { replace: true })} >
       <QueryClientProvider client={queryClient}>
         <CurrencyProvider>
+          <ClerkApiAuthBridge />
           <ClerkQueryClientCacheInvalidator />
           <WouterRouter base={basePath}><Router /></WouterRouter>
         </CurrencyProvider>
