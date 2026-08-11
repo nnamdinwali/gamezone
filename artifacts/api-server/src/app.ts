@@ -37,12 +37,25 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Authorized parties: the origins allowed to present a Clerk session token to
+// this API. The site is deployed on GitHub Pages while the API lives on a
+// different host, so the browser origin must be listed explicitly or Clerk
+// rejects the bearer token and every authenticated route returns 401.
+const authorizedParties = (process.env.CLERK_AUTHORIZED_PARTIES ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
+    // Pin the instance to the configured key. Deriving it from this API's own
+    // hostname (manus.space) yields a different Clerk instance than the one the
+    // frontend signs in against, so tokens never verify.
+    publishableKey:
+      process.env.CLERK_PUBLISHABLE_KEY ||
+      publishableKeyFromHost(getClerkProxyHost(req) ?? "", undefined),
+    secretKey: process.env.CLERK_SECRET_KEY,
+    ...(authorizedParties.length ? { authorizedParties } : {}),
   })),
 );
 
