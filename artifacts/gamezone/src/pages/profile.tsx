@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
-import { useGetUser, getGetUserQueryKey, useGetUserStats, getGetUserStatsQueryKey } from "@workspace/api-client-react";
+import { useGetUserStats, getGetUserStatsQueryKey } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,18 +61,22 @@ export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
   const formatCurrency = useMoney();
   const { currency, setCurrency } = useCurrency();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentUser();
+  const {
+    data: currentUser,
+    isLoading: isCurrentUserLoading,
+    isError: isCurrentUserError,
+  } = useCurrentUser();
 
   const routeId = params?.id ? parseInt(params.id, 10) : NaN;
   const id = Number.isFinite(routeId) ? routeId : Number(currentUser?.id ?? 0);
 
-  const { data: user, isLoading: isUserLoading } = useGetUser(id, {
-    query: { enabled: id > 0, queryKey: getGetUserQueryKey(id) }
-  });
-
-  const { data: stats, isLoading: isStatsLoading } = useGetUserStats(id, {
+  const { data: stats } = useGetUserStats(id, {
     query: { enabled: id > 0, queryKey: getGetUserStatsQueryKey(id) }
   });
+
+  // The current-user response already contains the complete profile. Using it
+  // directly prevents a second user request from trapping this page in loading.
+  const user = currentUser;
 
   const [displayName, setDisplayName] = useState("");
   const [countryCode, setCountryCode] = useState("US");
@@ -95,7 +99,7 @@ export function ProfilePage() {
     }
   }, []);
 
-  if (isCurrentUserLoading || id <= 0 || isUserLoading || isStatsLoading) {
+  if (isCurrentUserLoading) {
     return (
       <div className="space-y-6 pb-12">
         <Skeleton className="h-40 w-full rounded-3xl" />
@@ -107,14 +111,16 @@ export function ProfilePage() {
     );
   }
 
-  if (!user || !stats) {
+  if (isCurrentUserError || !user || id <= 0) {
     return (
       <div className="py-20 text-center">
-        <h2 className="text-2xl font-bold">User Not Found</h2>
+        <h2 className="text-2xl font-bold">Profile unavailable</h2>
       </div>
     );
   }
 
+  const gamesPlayed = stats?.gamesPlayed ?? 0;
+  const totalEarnings = stats?.totalEarnings ?? 0;
   const memberSince = format(new Date(user.createdAt), "M/d/yyyy");
   const avatarInitial = (displayName || user.username || "?").charAt(0).toUpperCase();
 
@@ -177,7 +183,7 @@ export function ProfilePage() {
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Games Played
             </p>
-            <p className="text-2xl font-bold font-heading">{stats.gamesPlayed}</p>
+            <p className="text-2xl font-bold font-heading">{gamesPlayed}</p>
           </CardContent>
         </Card>
 
@@ -186,7 +192,7 @@ export function ProfilePage() {
             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Lifetime Earnings
             </p>
-            <p className="text-2xl font-bold font-heading">{formatCurrency(stats.totalEarnings)}</p>
+            <p className="text-2xl font-bold font-heading">{formatCurrency(totalEarnings)}</p>
           </CardContent>
         </Card>
       </div>
