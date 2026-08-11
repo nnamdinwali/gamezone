@@ -41,6 +41,7 @@ Required env: see `.env.example`.
 
 ## Notes
 
-- Recovered from the Replit workspace; `pnpm-lock.yaml` and `node_modules` are not
+- `pnpm-lock.yaml` and `node_modules` are not
   included — run `pnpm install` to regenerate the lockfile.
-- `.replit` is kept for reference if you redeploy on Replit.
+- Backend: the Manus API at https://gamezoneapi-cp623ub2.manus.space is the only backend.
+  Replit and Render deployments are retired; override with `VITE_API_URL` if the API moves.
