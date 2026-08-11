@@ -31,7 +31,12 @@ const queryClient = new QueryClient({
 });
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+// Prefer the explicitly configured key. Host-derived keys only make sense on
+// Clerk-managed preview hosts; on GitHub Pages the derivation must not win over
+// the real instance key, or the frontend and API end up on different instances.
+const clerkPubKey =
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
+  publishableKeyFromHost(window.location.hostname, undefined);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
