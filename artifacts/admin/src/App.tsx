@@ -1,4 +1,4 @@
-import { useAuth, useClerk, useUser } from "@clerk/react";
+import { useAdminAuth, startAdminLogin } from "./admin-auth";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Activity, Ban, Gamepad2, LogOut, ShieldCheck, Users } from "lucide-react";
 import { adminFetch } from "./main";
@@ -20,21 +20,18 @@ type AdminUser = {
 };
 
 function SignInGate() {
-  const { openSignIn } = useClerk();
   return (
     <main className="gate">
       <ShieldCheck size={42} />
       <h1>GameZone Admin</h1>
       <p>Administrator access is required.</p>
-      <button onClick={() => openSignIn()}>Sign in</button>
+      <button onClick={startAdminLogin}>Sign in</button>
     </main>
   );
 }
 
 export default function App() {
-  const { isLoaded, isSignedIn, getToken } = useAuth();
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { isLoaded, isSignedIn, user, signOut, error: authError, reload: reloadAuth } = useAdminAuth();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [games, setGames] = useState<AdminGame[]>([]);
@@ -44,15 +41,19 @@ export default function App() {
   const [gameForm, setGameForm] = useState({ title: "", description: "", genre: "Arcade", thumbnailUrl: "", gameUrl: "https://example.com", androidStoreUrl: "", iosStoreUrl: "", packageName: "", creatorName: "GameZone Studio", rewardPerMinute: "0" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [messageUserId, setMessageUserId] = useState("");
+  const [messageTitle, setMessageTitle] = useState("");
+  const [messageBody, setMessageBody] = useState("");
+  const [messageStatus, setMessageStatus] = useState("");
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const [nextOverview, nextUsers, nextGames] = await Promise.all([
-        adminFetch<Overview>("/api/admin/overview", getToken),
-        adminFetch<AdminUser[]>("/api/admin/users", getToken),
-        adminFetch<AdminGame[]>("/api/games", getToken),
+        adminFetch<Overview>("/api/admin/overview"),
+        adminFetch<AdminUser[]>("/api/admin/users"),
+        adminFetch<AdminGame[]>("/api/games"),
       ]);
       setOverview(nextOverview);
       setUsers(nextUsers);
@@ -63,7 +64,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     if (isSignedIn) loadAdminData();
@@ -71,19 +72,39 @@ export default function App() {
 
   useEffect(() => {
     if (!selectedGameId || !isSignedIn) return;
-    adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`, getToken)
+    adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`)
       .then(setMilestones)
       .catch((err) => setError(err instanceof Error ? err.message : "Unable to load milestones"));
-  }, [getToken, isSignedIn, selectedGameId]);
+  }, [isSignedIn, selectedGameId]);
 
   if (!isLoaded) return <div className="loading">Loading admin session…</div>;
-  if (!isSignedIn) return <SignInGate />;
+  if (!isSignedIn) return <><SignInGate />{authError && <div className="error">{authError}<button className="action" onClick={() => void reloadAuth()}>Retry</button></div>}</>;
+
+  const sendMessage = async () => {
+    const userId = Number(messageUserId);
+    if (!Number.isInteger(userId) || userId <= 0 || !messageTitle.trim() || !messageBody.trim()) {
+      setMessageStatus("Choose a user and provide both a title and message.");
+      return;
+    }
+    setMessageStatus("Sending…");
+    try {
+      await adminFetch("/api/admin/notifications", {
+        method: "POST",
+        body: JSON.stringify({ userId, title: messageTitle.trim(), message: messageBody.trim() }),
+      });
+      setMessageTitle("");
+      setMessageBody("");
+      setMessageStatus("Message sent. It will appear in the selected user’s bell.");
+    } catch (err) {
+      setMessageStatus(err instanceof Error ? err.message : "Unable to send message");
+    }
+  };
 
   const banUser = async (id: number) => {
     const reason = window.prompt("Reason for this ban:", "Policy violation")?.trim();
     if (!reason) return;
     try {
-      await adminFetch(`/api/admin/users/${id}/ban`, getToken, {
+      await adminFetch(`/api/admin/users/${id}/ban`, {
         method: "PATCH",
         body: JSON.stringify({ reason }),
       });
@@ -95,7 +116,7 @@ export default function App() {
 
   const createGame = async () => {
     try {
-      const created = await adminFetch<AdminGame>("/api/games", getToken, {
+      const created = await adminFetch<AdminGame>("/api/games", {
         method: "POST",
         body: JSON.stringify({ ...gameForm, rewardPerMinute: Number(gameForm.rewardPerMinute) }),
       });
@@ -110,7 +131,7 @@ export default function App() {
   const createMilestone = async () => {
     if (!selectedGameId) return;
     try {
-      await adminFetch(`/api/admin/games/${selectedGameId}/milestones`, getToken, {
+      await adminFetch(`/api/admin/games/${selectedGameId}/milestones`, {
         method: "POST",
         body: JSON.stringify({
           ...milestoneForm,
@@ -118,7 +139,7 @@ export default function App() {
           rewardAmount: Number(milestoneForm.rewardAmount),
         }),
       });
-      const refreshed = await adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`, getToken);
+      const refreshed = await adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`);
       setMilestones(refreshed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create milestone");
@@ -127,7 +148,7 @@ export default function App() {
 
   const unbanUser = async (id: number) => {
     try {
-      await adminFetch(`/api/admin/users/${id}/unban`, getToken, { method: "PATCH" });
+      await adminFetch(`/api/admin/users/${id}/unban`, { method: "PATCH" });
       await loadAdminData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to unban user");
@@ -138,7 +159,7 @@ export default function App() {
     <div className="admin-shell">
       <header className="topbar">
         <div className="brand"><ShieldCheck size={25} /><span>GAMEZONE ADMIN</span></div>
-        <div className="account"><span>{user?.primaryEmailAddress?.emailAddress || "Administrator"}</span><button onClick={() => signOut()}><LogOut size={16} /> Sign out</button></div>
+        <div className="account"><span>{user?.email || "Administrator"}</span><button onClick={() => void signOut()}><LogOut size={16} /> Sign out</button></div>
       </header>
       <main className="content">
         <div className="heading"><div><p className="eyebrow">CONTROL CENTER</p><h1>Platform operations</h1><p>Manage games, players, bans, rewards, and payout review from a separate administrator surface.</p></div><button className="refresh" onClick={loadAdminData}>Refresh</button></div>
@@ -159,6 +180,16 @@ export default function App() {
         <section className="panel">
           <div className="panel-title"><div><p className="eyebrow">ACCOUNT MANAGEMENT</p><h2>Users</h2></div><span>{loading ? "Updating…" : `${users.length} records`}</span></div>
           <div className="table-wrap"><table><thead><tr><th>User</th><th>Balance</th><th>Games played</th><th>Status</th><th>Action</th></tr></thead><tbody>{users.map((account) => <tr key={account.id}><td><strong>{account.username}</strong><small>{account.email}</small></td><td>${account.balance.toFixed(2)}</td><td>{account.gamesPlayed}</td><td><span className={account.bannedAt ? "status banned" : "status active"}>{account.bannedAt ? "Banned" : "Active"}</span></td><td>{account.bannedAt ? <button className="action unban" onClick={() => unbanUser(account.id)}>Unban</button> : <button className="action ban" onClick={() => banUser(account.id)}>Ban</button>}</td></tr>)}</tbody></table></div>
+        </section>
+        <section className="panel">
+          <div className="panel-title"><div><p className="eyebrow">USER COMMUNICATION</p><h2>Message a user</h2></div><span>Delivered to the player bell</span></div>
+          <div className="upload-grid">
+            <select value={messageUserId} onChange={(event) => setMessageUserId(event.target.value)}><option value="">Select a user</option>{users.map((account) => <option key={account.id} value={account.id}>{account.username} · {account.email}</option>)}</select>
+            <input placeholder="Notification title" value={messageTitle} onChange={(event) => setMessageTitle(event.target.value)} />
+            <textarea placeholder="Write a message for this user" value={messageBody} onChange={(event) => setMessageBody(event.target.value)} rows={4} />
+            <button className="refresh" onClick={() => void sendMessage()}>Send notification</button>
+          </div>
+          {messageStatus && <div className={messageStatus.startsWith("Message sent") ? "success" : "error"}>{messageStatus}</div>}
         </section>
         <section className="next"><h2>Next admin modules</h2><div><span>Game uploads and store links</span><span>Milestone reward schedules</span><span>Wallet and payout review</span><span>Audit log</span></div></section>
       </main>

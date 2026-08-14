@@ -21,8 +21,6 @@ jobs:
       PORT: '5000'
       BASE_PATH: /gamezone/
       ADMIN_BASE_PATH: /gamezone/admin/
-      # Clerk publishable keys are public by design; repo secret overrides it if set.
-      VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_dXByaWdodC1mYWxjb24tMi5jbGVyay5hY2NvdW50cy5kZXYk' }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
       VITE_APP_ID: Cp623UB2atBZci58ThtrZQ
       VITE_OAUTH_PORTAL_URL: https://manus.im
@@ -36,7 +34,7 @@ jobs:
           node-version: 22
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm --filter @workspace/gamezone run build
-      - run: PORT=5174 BASE_PATH=${ADMIN_BASE_PATH} VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY} VITE_API_URL=${VITE_API_URL} pnpm --filter @workspace/admin run build
+      - run: PORT=5174 BASE_PATH=${ADMIN_BASE_PATH} VITE_API_URL=${VITE_API_URL} pnpm --filter @workspace/admin run build
       # SPA fallbacks for both the player site and the separate admin app.
       - run: cp artifacts/gamezone/dist/public/index.html artifacts/gamezone/dist/public/404.html
       - run: mkdir -p artifacts/gamezone/dist/public/admin
