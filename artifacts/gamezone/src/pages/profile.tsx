@@ -18,7 +18,8 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useCurrency, useMoney, BASE_CURRENCY } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
-import { User, Calendar, Gamepad2, Coins, ChevronDown } from "lucide-react";
+import { useManusAuth } from "@/lib/manus-auth";
+import { User, Calendar, Gamepad2, Coins, ChevronDown, LogOut } from "lucide-react";
 
 const COUNTRY_CODES = [
   { code: "US", label: "US" },
@@ -59,6 +60,7 @@ const COUNTRY_KEY = "gamezone:country-code";
 
 export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
+  const { logout } = useManusAuth();
   const formatCurrency = useMoney();
   const { currency, setCurrency } = useCurrency();
   const {
@@ -261,6 +263,15 @@ export function ProfilePage() {
             className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider rounded-xl"
           >
             Save changes
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void logout()}
+            className="w-full h-12 rounded-xl border-destructive/40 bg-transparent font-bold uppercase tracking-wider text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
           </Button>
         </CardContent>
       </Card>

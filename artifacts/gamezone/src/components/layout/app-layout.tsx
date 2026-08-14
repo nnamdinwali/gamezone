@@ -66,7 +66,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
               </div>
-              <button type="button" onClick={() => void logout()} aria-label="Log out" className="hidden rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white md:block"><LogOut className="h-5 w-5" /></button>
+              {!location.startsWith("/profile") && <button type="button" onClick={() => void logout()} aria-label="Log out" className="hidden rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white md:block"><LogOut className="h-5 w-5" /></button>}
             </div>
           </div>
         </header>
