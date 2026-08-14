@@ -1,4 +1,4 @@
-import { useClerk, useUser } from "@clerk/react";
+import { useManusAuth } from "@/lib/manus-auth";
 import { Link, useLocation } from "wouter";
 import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
 import { Sidebar } from "./sidebar";
@@ -14,13 +14,12 @@ const bottomLinks = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user: sessionUser, logout } = useManusAuth();
   const { data: currentUser } = useCurrentUser();
   const [location] = useLocation();
   const profileHref = currentUser?.id ? `/profile/${currentUser.id}` : "/profile";
-  const avatar = currentUser?.avatarUrl || user?.imageUrl;
-  const initials = (currentUser?.username || user?.firstName || "P").slice(0, 1).toUpperCase();
+  const avatar = currentUser?.avatarUrl || sessionUser?.avatarUrl;
+  const initials = (currentUser?.username || sessionUser?.username || "P").slice(0, 1).toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#10111f] text-white">
@@ -32,14 +31,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="h-11 w-11 overflow-hidden rounded-2xl border border-white/10 bg-[#2b2c3c]">
                 {avatar ? <img src={avatar} alt="Profile" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center font-bold text-[#d5d4df]">{initials}</div>}
               </div>
-              <span className="hidden text-sm font-semibold text-white sm:block">{currentUser?.username || user?.firstName || "Player"}</span>
+              <span className="hidden text-sm font-semibold text-white sm:block">{currentUser?.username || sessionUser?.username || "Player"}</span>
             </Link>
 
             <div className="flex items-center gap-2">
               <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-[#00c978] px-3 py-2 text-sm font-bold text-white sm:flex"><span className="text-[#00d57e]">$</span>{Number(currentUser?.balance ?? 0).toFixed(2)}</Link>
               <Link href="/games" className="hidden items-center gap-2 rounded-xl border border-[#8584a4] px-3 py-2 text-sm font-bold text-white sm:flex"><Ticket className="h-4 w-4 text-[#b9b8df]" />0</Link>
               <button type="button" aria-label="Notifications" className="rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white"><Bell className="h-6 w-6 fill-current" strokeWidth={1.5} /></button>
-              <button type="button" onClick={() => signOut({ redirectUrl: import.meta.env.BASE_URL || "/" })} aria-label="Log out" className="hidden rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white md:block"><LogOut className="h-5 w-5" /></button>
+              <button type="button" onClick={() => void logout()} aria-label="Log out" className="hidden rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white md:block"><LogOut className="h-5 w-5" /></button>
             </div>
           </div>
         </header>
