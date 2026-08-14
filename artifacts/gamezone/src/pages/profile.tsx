@@ -71,7 +71,7 @@ export function ProfilePage() {
   const routeId = params?.id ? parseInt(params.id, 10) : NaN;
   const id = Number.isFinite(routeId) ? routeId : Number(currentUser?.id ?? 0);
 
-  const { data: stats, refetch: refetchStats } = useGetUserStats(id, {
+  const { data: stats, isLoading: isStatsLoading, isError: isStatsError, refetch: refetchStats } = useGetUserStats(id, {
     query: { enabled: id > 0, retry: 1, refetchOnWindowFocus: false, queryKey: getGetUserStatsQueryKey(id) }
   });
 
@@ -100,7 +100,7 @@ export function ProfilePage() {
     }
   }, []);
 
-  if (isCurrentUserLoading) {
+  if (isCurrentUserLoading || isStatsLoading) {
     return (
       <div className="space-y-6 pb-12">
         <Skeleton className="h-40 w-full rounded-3xl" />
@@ -112,7 +112,7 @@ export function ProfilePage() {
     );
   }
 
-  if (isCurrentUserError || !user || id <= 0) {
+  if (isCurrentUserError || isStatsError || !user || id <= 0) {
     return (
       <div className="py-20 text-center">
         <h2 className="text-2xl font-bold">Profile temporarily unavailable</h2>
