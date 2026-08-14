@@ -4,6 +4,7 @@ import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable } fr
 import { desc, eq, sql } from "drizzle-orm";
 
 const router = Router();
+const ownerEmail = process.env.ADMIN_OWNER_EMAIL?.trim().toLowerCase();
 
 async function requireAdmin(req: Request, res: Response) {
   const clerkId = getAuth(req).userId;
@@ -14,9 +15,15 @@ async function requireAdmin(req: Request, res: Response) {
 
   try {
     const clerkUser = await clerkClient.users.getUser(clerkId);
-    const role = (clerkUser.publicMetadata as { role?: unknown } | undefined)?.role;
-    if (role !== "admin") {
-      res.status(403).json({ error: "Administrator access required" });
+    if (!ownerEmail) {
+      res.status(503).json({ error: "Admin owner is not configured" });
+      return false;
+    }
+    const ownsAdminEmail = clerkUser.emailAddresses.some(
+      (address) => address.emailAddress.trim().toLowerCase() === ownerEmail,
+    );
+    if (!ownsAdminEmail) {
+      res.status(403).json({ error: "Owner administrator access required" });
       return false;
     }
     return true;
