@@ -33,8 +33,7 @@ export function HomePage() {
       <section className="space-y-5">
         <div className="flex items-center justify-center gap-3">
           <div className="flex min-w-[132px] items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)]">
-            <span className="text-[#00d57e]">$</span>
-            <span>{isUserLoading ? "—" : balance.toFixed(2)}</span>
+            <span>{isUserLoading ? "—" : formatCurrency(balance)}</span>
           </div>
           <div className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white">
             <Ticket className="h-5 w-5 text-[#b6b4df]" />

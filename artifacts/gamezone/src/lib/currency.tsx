@@ -10,6 +10,7 @@ export const BASE_CURRENCY = "USD";
 const RATES_URL = `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`;
 const CACHE_KEY = "rockcity:fx-rates";
 const PREF_KEY = "rockcity:currency";
+const COUNTRY_KEY = "gamezone:country-code";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // refresh twice a day
 
 type RatesCache = { fetchedAt: number; rates: Record<string, number> };
@@ -89,7 +90,10 @@ function regionFromLocale(): string | null {
 
 function detectCurrency(): string {
   const saved = typeof localStorage !== "undefined" ? localStorage.getItem(PREF_KEY) : null;
-  if (saved) return saved;
+  if (saved && /^[A-Z]{3}$/.test(saved)) return saved;
+
+  const savedCountry = typeof localStorage !== "undefined" ? localStorage.getItem(COUNTRY_KEY)?.toUpperCase() : null;
+  if (savedCountry && REGION_CURRENCY[savedCountry]) return REGION_CURRENCY[savedCountry];
 
   const zoneRegion = regionFromTimeZone();
   if (zoneRegion && REGION_CURRENCY[zoneRegion]) return REGION_CURRENCY[zoneRegion];

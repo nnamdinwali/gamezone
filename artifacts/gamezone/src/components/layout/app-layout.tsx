@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
 import { useNotifications } from "@/lib/notifications";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { useMoney } from "@/lib/currency";
 
 const bottomLinks = [
   { href: "/", label: "Earn", icon: LayoutGrid },
@@ -18,6 +19,7 @@ const bottomLinks = [
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user: sessionUser, logout } = useManusAuth();
   const { data: currentUser } = useCurrentUser();
+  const formatMoney = useMoney();
   const [location] = useLocation();
   const profileHref = currentUser?.id ? `/profile/${currentUser.id}` : "/profile";
   const avatar = currentUser?.avatarUrl || sessionUser?.avatarUrl;
@@ -39,7 +41,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </Link>
 
             <div className="flex items-center gap-2">
-              <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-[#00c978] px-3 py-2 text-sm font-bold text-white sm:flex"><span className="text-[#00d57e]">$</span>{Number(currentUser?.balance ?? 0).toFixed(2)}</Link>
+              <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-[#00c978] px-3 py-2 text-sm font-bold text-white sm:flex">{formatMoney(Number(currentUser?.balance ?? 0))}</Link>
               <Link href="/games" className="hidden items-center gap-2 rounded-xl border border-[#8584a4] px-3 py-2 text-sm font-bold text-white sm:flex"><Ticket className="h-4 w-4 text-[#b9b8df]" />0</Link>
               <div className="relative">
                 <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((open) => !open)} className="relative rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white">
