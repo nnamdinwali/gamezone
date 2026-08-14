@@ -64,53 +64,53 @@
 }
 
 :root {
-  /* Clean Dark Green Fintech Vibes */
-  --background: 135 30% 4%;
+  /* Freecash-inspired earn dashboard palette */
+  --background: 239 19% 9%;
   --foreground: 0 0% 100%;
 
-  --card: 135 25% 7%;
+  --card: 239 18% 12%;
   --card-foreground: 0 0% 100%;
-  --card-border: 135 20% 12%;
+  --card-border: 239 12% 20%;
 
-  --popover: 135 25% 7%;
+  --popover: 239 18% 12%;
   --popover-foreground: 0 0% 100%;
-  --popover-border: 135 20% 12%;
+  --popover-border: 239 12% 20%;
 
-  --primary: 142 76% 45%;
-  --primary-foreground: 0 0% 100%;
-  --primary-border: 142 76% 35%;
+  --primary: 154 100% 42%;
+  --primary-foreground: 239 19% 9%;
+  --primary-border: 154 100% 32%;
 
-  --secondary: 135 25% 12%;
+  --secondary: 239 17% 16%;
   --secondary-foreground: 0 0% 100%;
-  --secondary-border: 135 25% 18%;
+  --secondary-border: 239 14% 24%;
 
-  --muted: 135 20% 10%;
-  --muted-foreground: 135 15% 55%;
-  --muted-border: 135 20% 16%;
+  --muted: 239 17% 15%;
+  --muted-foreground: 239 11% 64%;
+  --muted-border: 239 12% 22%;
 
-  --accent: 142 76% 50%;
-  --accent-foreground: 135 30% 4%;
-  --accent-border: 142 76% 40%;
+  --accent: 154 100% 48%;
+  --accent-foreground: 239 19% 9%;
+  --accent-border: 154 100% 38%;
 
-  --success: 142 76% 45%;
-  --success-foreground: 135 30% 4%;
+  --success: 154 100% 42%;
+  --success-foreground: 239 19% 9%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --destructive-border: 0 84% 50%;
 
-  --border: 135 20% 12%;
-  --input: 135 20% 8%;
-  --ring: 142 76% 45%;
+  --border: 239 12% 20%;
+  --input: 239 17% 13%;
+  --ring: 154 100% 42%;
 
-  --sidebar: 135 28% 5%;
+  --sidebar: 239 20% 8%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 135 20% 12%;
-  --sidebar-primary: 142 76% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 135 25% 12%;
+  --sidebar-border: 239 12% 20%;
+  --sidebar-primary: 154 100% 42%;
+  --sidebar-primary-foreground: 239 19% 9%;
+  --sidebar-accent: 239 17% 16%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 142 76% 45%;
+  --sidebar-ring: 154 100% 42%;
 
   --app-font-sans: 'Plus Jakarta Sans', sans-serif;
   --app-font-heading: 'Outfit', sans-serif;

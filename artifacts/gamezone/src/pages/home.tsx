@@ -1,210 +1,135 @@
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Crown } from "lucide-react";
-import { useMoney } from "@/lib/currency";
-import { 
-  useGetUserStats, 
-  getGetUserStatsQueryKey, 
-  useGetLeaderboard, 
-  getGetLeaderboardQueryKey 
+import { Bell, ChevronRight, Gift, Search, Ticket, Trophy, WalletCards } from "lucide-react";
+import {
+  getListGamesQueryKey,
+  useGetUserStats,
+  getGetUserStatsQueryKey,
+  useListGames,
 } from "@workspace/api-client-react";
+import { useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
+
+const CASHOUT_TARGET = 2.5;
+
+function initials(value?: string | null) {
+  return (value || "G").trim().slice(0, 1).toUpperCase();
+}
 
 export function HomePage() {
   const formatCurrency = useMoney();
   const { data: user, isLoading: isUserLoading } = useCurrentUser();
   const userId = user?.id;
-
-  const { data: stats, isLoading: isStatsLoading } = useGetUserStats(userId ?? 0, {
-    query: { enabled: !!userId, queryKey: getGetUserStatsQueryKey(userId ?? 0) }
+  const { data: stats } = useGetUserStats(userId ?? 0, {
+    query: { enabled: !!userId, queryKey: getGetUserStatsQueryKey(userId ?? 0) },
+  });
+  const { data: games = [], isLoading: isGamesLoading } = useListGames(undefined, {
+    query: { queryKey: getListGamesQueryKey() },
   });
 
-  const { data: leaderboard, isLoading: isLeaderboardLoading } = useGetLeaderboard({
-    query: { queryKey: getGetLeaderboardQueryKey() }
-  });
-
-  const progress = Math.min((stats?.gamesPlayed || 0) * 5, 100) || 0; // Simple calc for visual progress
+  const featured = games[0];
+  const offers = games.slice(1, 5);
+  const balance = Number(user?.balance ?? 0);
+  const cashoutProgress = Math.min((balance / CASHOUT_TARGET) * 100, 100);
+  const gamesPlayed = stats?.gamesPlayed ?? user?.gamesPlayed ?? 0;
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
-      {/* Balance Card */}
-      <Card className="bg-gradient-to-br from-primary to-[#107033] border-none text-primary-foreground overflow-hidden rounded-[2rem] relative shadow-lg">
-        <CardContent className="p-8 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
-          <div className="space-y-4">
-            <p className="text-primary-foreground/80 text-xs md:text-sm font-semibold uppercase tracking-wider">Available Balance</p>
-            {isUserLoading ? (
-              <Skeleton className="h-14 w-48 bg-primary-foreground/20 rounded-xl" />
-            ) : (
-              <h2 className="text-5xl md:text-6xl font-bold tracking-tight">{formatCurrency(user?.balance || 0)}</h2>
-            )}
-            <Link href="/earnings">
-              <Button variant="outline" className="rounded-full bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground font-medium px-8 h-12 mt-2">
-                Withdraw <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="flex items-center justify-between gap-6 md:gap-8 bg-black/15 p-6 rounded-3xl backdrop-blur-sm w-full md:w-auto border border-white/10">
-            <div className="space-y-1">
-              <p className="text-primary-foreground/70 text-[10px] md:text-xs font-semibold uppercase tracking-wide">Total Earned</p>
-              {isUserLoading ? (
-                <Skeleton className="h-7 w-24 bg-primary-foreground/20 rounded-md" />
-              ) : (
-                <p className="text-xl md:text-2xl font-bold">{formatCurrency(user?.totalEarnings || 0)}</p>
-              )}
-            </div>
-            <div className="w-px h-12 bg-primary-foreground/20" />
-            <div className="space-y-1">
-              <p className="text-primary-foreground/70 text-[10px] md:text-xs font-semibold uppercase tracking-wide">Total Withdrawn</p>
-              {isUserLoading ? (
-                <Skeleton className="h-7 w-24 bg-primary-foreground/20 rounded-md" />
-              ) : (
-                <p className="text-xl md:text-2xl font-bold">{formatCurrency(Math.max((user?.totalEarnings || 0) - (user?.balance || 0), 0))}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-        {/* Decorative background shapes */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-black/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
-      </Card>
-
-      {/* Account Progress Card */}
-      <Card className="bg-card border-border rounded-3xl shadow-sm overflow-hidden relative">
-        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-8 relative z-10">
-          <div className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
-            {isStatsLoading ? (
-              <Skeleton className="w-32 h-32 rounded-full" />
-            ) : (
-              <>
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" className="stroke-muted fill-none" strokeWidth="8" />
-                  <circle 
-                    cx="50" 
-                    cy="50" 
-                    r="40" 
-                    className="stroke-primary fill-none transition-all duration-1000 ease-out" 
-                    strokeWidth="8" 
-                    strokeDasharray="251.2" 
-                    strokeDashoffset={251.2 - (251.2 * progress / 100)} 
-                    strokeLinecap="round" 
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-bold">{progress}%</span>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="space-y-3 flex-1 text-center md:text-left w-full">
-            <h3 className="text-xl font-bold">Account Progress</h3>
-            <p className="text-muted-foreground text-sm">Start playing games to earn! Complete games to level up your account and increase your earning potential.</p>
-            <div className="w-full bg-muted h-2.5 rounded-full mt-4 overflow-hidden border border-border">
-              <div className="bg-primary h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden" style={{ width: `${progress}%` }}>
-                <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground font-medium text-right mt-1">{progress}% Complete</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Weekly Leaderboard */}
-      <div className="space-y-6 pt-4">
-        <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-3xl space-y-8 pb-8">
+      <section className="space-y-5">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center shadow-sm">
-               <Crown className="h-5 w-5 text-primary" />
+            <div className="h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-[#292b3b] shadow-lg">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Your avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl font-bold text-white/80">{initials(user?.username)}</div>
+              )}
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">Weekly Leaderboard</h2>
+            <div>
+              <p className="text-xs font-medium text-[#9a9bad]">Welcome back</p>
+              <p className="text-lg font-semibold text-white">{user?.username || "Player"}</p>
+            </div>
           </div>
-          <Badge variant="outline" className="text-primary border-primary bg-primary/10 px-3 py-1 font-bold text-xs">
-            WEEKLY
-          </Badge>
+          <button type="button" aria-label="Notifications" className="rounded-full p-2 text-[#9b9bad] transition hover:bg-white/5 hover:text-white">
+            <Bell className="h-7 w-7 fill-current" strokeWidth={1.5} />
+          </button>
         </div>
 
-        {isLeaderboardLoading ? (
-          <div className="h-[280px] flex items-end justify-center gap-4">
-            <Skeleton className="w-1/3 h-48 rounded-t-2xl" />
-            <Skeleton className="w-1/3 h-64 rounded-t-3xl" />
-            <Skeleton className="w-1/3 h-40 rounded-t-2xl" />
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex min-w-[132px] items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)]">
+            <span className="text-[#00d57e]">$</span>
+            <span>{isUserLoading ? "—" : balance.toFixed(2)}</span>
           </div>
-        ) : leaderboard && leaderboard.length > 0 ? (
-          <div className="flex items-end justify-center gap-3 md:gap-6 mt-12 h-[280px] max-w-4xl mx-auto px-2">
-            {/* 2nd Place */}
-            {leaderboard[1] && (
-              <div className="w-1/3 flex flex-col items-center group relative z-10 animate-in slide-in-from-bottom-4 duration-500 delay-100 h-[75%]">
-                <div className="relative mb-4">
-                  <Avatar className="w-14 h-14 md:w-16 md:h-16 border-4 border-card shadow-lg ring-2 ring-border">
-                    <AvatarImage src={leaderboard[1].avatarUrl} />
-                    <AvatarFallback>{leaderboard[1].username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-card border border-border text-foreground font-bold text-xs w-6 h-6 flex items-center justify-center rounded-full shadow-sm">2</div>
-                </div>
-                <div className="bg-card border-x border-t border-border rounded-t-2xl w-full flex-1 flex flex-col items-center pt-8 pb-4 relative overflow-hidden transition-colors shadow-sm">
-                  <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-50 pointer-events-none" />
-                  <p className="font-bold text-foreground truncate w-full px-2 text-center text-xs md:text-sm">{leaderboard[1].username}</p>
-                  <Badge variant="secondary" className="mt-2 text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 font-semibold">
-                    {leaderboard[1].gamesPlayed} plays
-                  </Badge>
-                  <p className="text-primary font-mono text-sm font-bold mt-auto drop-shadow-sm">{formatCurrency(leaderboard[1].totalEarnings)}</p>
-                </div>
-              </div>
-            )}
-            
-            {/* 1st Place */}
-            {leaderboard[0] && (
-              <div className="w-[38%] md:w-1/3 flex flex-col items-center group relative z-20 animate-in slide-in-from-bottom-8 duration-700 h-full">
-                <div className="relative mb-5 md:mb-6">
-                  <Crown className="w-8 h-8 text-primary absolute -top-8 left-1/2 -translate-x-1/2 drop-shadow-md" strokeWidth={2.5} />
-                  <Avatar className="w-20 h-20 md:w-24 md:h-24 border-4 border-card shadow-xl ring-4 ring-primary">
-                    <AvatarImage src={leaderboard[0].avatarUrl} />
-                    <AvatarFallback>{leaderboard[0].username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-bold text-sm w-8 h-8 flex items-center justify-center rounded-full shadow-lg">1</div>
-                </div>
-                <div className="bg-gradient-to-b from-primary/10 to-card border-x border-t border-primary/30 rounded-t-[2rem] w-full flex-1 flex flex-col items-center pt-10 pb-4 relative overflow-hidden shadow-lg">
-                  <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-30 pointer-events-none" />
-                  <p className="font-bold text-foreground text-sm md:text-base truncate w-full px-2 text-center">{leaderboard[0].username}</p>
-                  <Badge className="mt-2 text-[10px] md:text-xs bg-primary text-primary-foreground px-2 py-0.5 font-bold">
-                    {leaderboard[0].gamesPlayed} plays
-                  </Badge>
-                  <p className="text-primary font-mono text-base md:text-lg font-bold mt-auto drop-shadow-sm">{formatCurrency(leaderboard[0].totalEarnings)}</p>
-                </div>
-              </div>
-            )}
-            
-            {/* 3rd Place */}
-            {leaderboard[2] && (
-              <div className="w-1/3 flex flex-col items-center group relative z-10 animate-in slide-in-from-bottom-4 duration-500 delay-200 h-[65%]">
-                <div className="relative mb-4">
-                  <Avatar className="w-14 h-14 md:w-16 md:h-16 border-4 border-card shadow-lg ring-2 ring-border">
-                    <AvatarImage src={leaderboard[2].avatarUrl} />
-                    <AvatarFallback>{leaderboard[2].username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-card border border-border text-foreground font-bold text-xs w-6 h-6 flex items-center justify-center rounded-full shadow-sm">3</div>
-                </div>
-                <div className="bg-card border-x border-t border-border rounded-t-2xl w-full flex-1 flex flex-col items-center pt-8 pb-4 relative overflow-hidden transition-colors shadow-sm">
-                  <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-50 pointer-events-none" />
-                  <p className="font-bold text-foreground truncate w-full px-2 text-center text-xs md:text-sm">{leaderboard[2].username}</p>
-                  <Badge variant="secondary" className="mt-2 text-[10px] bg-secondary text-secondary-foreground px-2 py-0.5 font-semibold">
-                    {leaderboard[2].gamesPlayed} plays
-                  </Badge>
-                  <p className="text-primary font-mono text-sm font-bold mt-auto drop-shadow-sm">{formatCurrency(leaderboard[2].totalEarnings)}</p>
-                </div>
-              </div>
-            )}
+          <div className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white">
+            <Ticket className="h-5 w-5 text-[#b6b4df]" />
+            <span>0</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="text-center text-xl font-medium text-white">Next cashout</div>
+        <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5">
+          <div className="flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] px-5 text-sm font-semibold text-white transition-all duration-700" style={{ width: `${Math.max(cashoutProgress, 22)}%` }}>
+            <span>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Trophy className="h-8 w-8 text-[#ffe21a]" fill="currentColor" strokeWidth={1.5} />
+          <h1 className="text-3xl font-bold tracking-tight text-white">Best for You</h1>
+        </div>
+
+        {featured ? (
+          <OfferCard game={featured} featured formatCurrency={formatCurrency} />
+        ) : isGamesLoading ? (
+          <div className="h-[390px] animate-pulse rounded-3xl bg-[#1b1c2b]" />
+        ) : (
+          <div className="rounded-3xl border border-white/10 bg-[#1b1c2b] p-8 text-center text-[#aaa9bb]">No offers are available yet.</div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Gift className="h-8 w-8 text-[#ffe21a]" fill="currentColor" strokeWidth={1.5} />
+            <h2 className="text-3xl font-bold tracking-tight text-white">More Offers</h2>
+          </div>
+          <Link href="/games" className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#00d57e]">View all <ChevronRight className="h-5 w-5" /></Link>
+        </div>
+
+        {offers.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4">
+            {offers.map((game) => <OfferCard key={game.id} game={game} formatCurrency={formatCurrency} />)}
           </div>
         ) : (
-          <div className="py-12 text-center text-muted-foreground border border-dashed rounded-xl border-border bg-card/30">
-            No leaderboard data available yet.
-          </div>
+          <Link href="/games" className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-[#171827] px-5 py-10 text-[#aaa9bb] hover:text-white"><Search className="h-5 w-5" /> Browse all games</Link>
         )}
+      </section>
+
+      <div className="rounded-2xl border border-white/10 bg-[#171827] px-4 py-3 text-center text-xs text-[#8f8ea1]">
+        {gamesPlayed > 0 ? `${gamesPlayed} games played · Keep going to unlock more rewards` : "Play your first game to start earning rewards"}
       </div>
     </div>
+  );
+}
+
+function OfferCard({ game, featured = false, formatCurrency }: { game: any; featured?: boolean; formatCurrency: (value: number) => string }) {
+  const reward = 0.17;
+  return (
+    <Link href={`/games/${game.id}`} className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition hover:-translate-y-0.5 hover:border-[#00d57e]/60 ${featured ? "" : "min-w-0"}`}>
+      <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
+        {game.thumbnailUrl ? <img src={game.thumbnailUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#171827] to-transparent" />
+      </div>
+      <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
+        <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-white`}>{game.title}</p>
+        <p className="truncate text-sm text-[#aaa9bb]">{game.description || "Install and play to earn rewards"}</p>
+        <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>
+          Play and Earn {formatCurrency(reward)}
+        </div>
+      </div>
+    </Link>
   );
 }
