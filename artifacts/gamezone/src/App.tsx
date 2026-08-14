@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useManusAuth, startLogin } from '@/lib/manus-auth';
 import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
+import { CurrencyProvider } from '@/lib/currency';
 
 import { HomePage } from '@/pages/home';
 import { GamesPage } from '@/pages/games';
@@ -136,7 +137,9 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WouterRouter base={basePath}><Router /></WouterRouter>
+      <CurrencyProvider>
+        <WouterRouter base={basePath}><Router /></WouterRouter>
+      </CurrencyProvider>
     </QueryClientProvider>
   );
 }
