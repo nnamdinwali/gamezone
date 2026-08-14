@@ -1,9 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
-import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
-import { useEffect, useRef } from 'react';
+import { useManusAuth, startLogin } from '@/lib/manus-auth';
+import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
 
 import { HomePage } from '@/pages/home';
@@ -28,59 +25,6 @@ const queryClient = new QueryClient({
 });
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-
-if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: 'clerk',
-  options: {
-    logoPlacement: 'inside' as const,
-    logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
-  },
-  variables: {
-    colorPrimary: '#39e36b',
-    colorForeground: '#f2fff5',
-    colorMutedForeground: '#9ab4a1',
-    colorDanger: '#ff8d86',
-    colorBackground: '#102319',
-    colorInput: '#0b1b12',
-    colorInputForeground: '#f2fff5',
-    colorNeutral: '#31533d',
-    fontFamily: 'Plus Jakarta Sans',
-    borderRadius: '0.9rem',
-  },
-  elements: {
-    rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[#102319] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[#31533d]',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[#f2fff5] font-bold',
-    headerSubtitle: 'text-[#b1c9b8]',
-    socialButtonsBlockButtonText: 'text-[#f2fff5]',
-    formFieldLabel: 'text-[#d9f5df]',
-    footerActionLink: 'text-[#62f07f]',
-    footerActionText: 'text-[#b1c9b8]',
-    dividerText: 'text-[#9ab4a1]',
-    identityPreviewEditButton: 'text-[#62f07f]',
-    formFieldSuccessText: 'text-[#62f07f]',
-    alertText: 'text-[#ffd6d2]',
-    logoBox: 'h-12',
-    logoImage: 'h-10 w-auto',
-    socialButtonsBlockButton: 'border-[#31533d] bg-[#172d20] hover:bg-[#20402b]',
-    formButtonPrimary: 'bg-[#39e36b] text-[#06200d] hover:bg-[#62f07f]',
-    formFieldInput: 'border-[#31533d] bg-[#0b1b12] text-[#f2fff5]',
-    footerAction: 'border-t border-[#31533d]',
-    dividerLine: 'bg-[#31533d]',
-    alert: 'border-[#7a423e] bg-[#351e1d]',
-    otpCodeFieldInput: 'border-[#31533d] bg-[#0b1b12] text-[#f2fff5]',
-    formFieldRow: 'text-[#f2fff5]',
-    main: 'bg-transparent',
-  },
-};
 
 function PublicLanding() {
   return (
@@ -114,36 +58,38 @@ function PublicLanding() {
   );
 }
 
+function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4 text-[#f2fff5]">
+      <div className="w-full max-w-md rounded-2xl border border-[#31533d] bg-[#102319] p-8 text-center">
+        <h1 className="font-heading text-3xl font-bold">{mode === 'sign-in' ? 'Welcome back' : 'Join ROCKCITY GAMES'}</h1>
+        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Continue with your Manus account. Your GameZone profile and rewards are created automatically after authentication.</p>
+        <button type="button" onClick={startLogin} className="mt-7 w-full rounded-xl bg-[#39e36b] px-5 py-3.5 font-bold text-[#06200d] hover:bg-[#62f07f]">{mode === 'sign-in' ? 'Sign in with Manus' : 'Create account with Manus'}</button>
+        <Link href="/" className="mt-5 inline-block text-sm text-[#62f07f] hover:underline">Return home</Link>
+      </div>
+    </main>
+  );
+}
+
 function HomeRedirect() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useManusAuth();
   if (!isLoaded) return <div className="min-h-[100dvh] bg-background" />;
   return isSignedIn ? <AppLayout><HomePage /></AppLayout> : <PublicLanding />;
 }
 
 function Protected({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useManusAuth();
   if (!isLoaded) return <div className="min-h-[100dvh] bg-background" />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   return <AppLayout>{children}</AppLayout>;
-}
-
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const prevUserId = useRef<string | null | undefined>(undefined);
-  useEffect(() => addListener(({ user }) => {
-    const id = user?.id ?? null;
-    if (prevUserId.current !== undefined && prevUserId.current !== id) queryClient.clear();
-    prevUserId.current = id;
-  }), [addListener]);
-  return null;
 }
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
-      <Route path="/sign-in/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>} />
-      <Route path="/sign-up/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>} />
+      <Route path="/sign-in/*?" component={() => <AuthScreen mode="sign-in" />} />
+      <Route path="/sign-up/*?" component={() => <AuthScreen mode="sign-up" />} />
       <Route path="/games"><Protected><GamesPage /></Protected></Route>
       <Route path="/games/:id"><Protected><GameDetailPage /></Protected></Route>
       <Route path="/play/:id"><Protected><PlayPage /></Protected></Route>
@@ -157,20 +103,12 @@ function Router() {
   );
 }
 
-function ClerkApp() {
-  const [, setLocation] = useLocation();
-  return (
-    <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your ROCKCITY GAMES account' } }, signUp: { start: { title: 'Join ROCKCITY GAMES', subtitle: 'Play smart, earn daily,' } } }} routerPush={(to) => setLocation(to.replace(basePath, '') || '/')} routerReplace={(to) => setLocation(to.replace(basePath, '') || '/')} >
-      <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
-        <WouterRouter base={basePath}><Router /></WouterRouter>
-      </QueryClientProvider>
-    </ClerkProvider>
-  );
-}
-
 function App() {
-  return <ClerkApp />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <WouterRouter base={basePath}><Router /></WouterRouter>
+    </QueryClientProvider>
+  );
 }
 
 export default App;

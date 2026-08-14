@@ -12,12 +12,12 @@ export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
   const id = params?.id ? parseInt(params.id, 10) : 1;
 
-  const { data: user, isLoading: isUserLoading } = useGetUser(id, {
-    query: { enabled: !!id, queryKey: getGetUserQueryKey(id) }
+  const { data: user, isLoading: isUserLoading, isError: isUserError, refetch: refetchUser } = useGetUser(id, {
+    query: { enabled: !!id, retry: 1, refetchOnWindowFocus: false, queryKey: getGetUserQueryKey(id) }
   });
 
-  const { data: stats, isLoading: isStatsLoading } = useGetUserStats(id, {
-    query: { enabled: !!id, queryKey: getGetUserStatsQueryKey(id) }
+  const { data: stats, isLoading: isStatsLoading, isError: isStatsError, refetch: refetchStats } = useGetUserStats(id, {
+    query: { enabled: !!id, retry: 1, refetchOnWindowFocus: false, queryKey: getGetUserStatsQueryKey(id) }
   });
 
   if (isUserLoading || isStatsLoading) {
@@ -33,10 +33,22 @@ export function ProfilePage() {
     );
   }
 
+  if (isUserError || isStatsError) {
+    return (
+      <div className="py-20 text-center">
+        <h2 className="text-2xl font-bold">Profile temporarily unavailable</h2>
+        <p className="mx-auto mt-3 max-w-md text-muted-foreground">Your authenticated profile is still synchronizing. Retry without leaving this page.</p>
+        <button type="button" onClick={() => { void refetchUser(); void refetchStats(); }} className="mt-6 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground hover:opacity-90">Retry profile</button>
+      </div>
+    );
+  }
+
   if (!user || !stats) {
     return (
       <div className="py-20 text-center">
-        <h2 className="text-2xl font-bold">User Not Found</h2>
+        <h2 className="text-2xl font-bold">Profile is still synchronizing</h2>
+        <p className="mx-auto mt-3 max-w-md text-muted-foreground">The account was authenticated, but profile data has not arrived yet.</p>
+        <button type="button" onClick={() => { void refetchUser(); void refetchStats(); }} className="mt-6 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground hover:opacity-90">Retry profile</button>
       </div>
     );
   }
