@@ -422,6 +422,15 @@ components:
           type: string
         gameUrl:
           type: string
+        androidStoreUrl:
+          type: string
+          nullable: true
+        iosStoreUrl:
+          type: string
+          nullable: true
+        packageName:
+          type: string
+          nullable: true
         creatorName:
           type: string
         playCount:
@@ -448,6 +457,15 @@ components:
           type: string
         gameUrl:
           type: string
+        androidStoreUrl:
+          type: string
+          nullable: true
+        iosStoreUrl:
+          type: string
+          nullable: true
+        packageName:
+          type: string
+          nullable: true
         creatorName:
           type: string
         rewardPerMinute:
@@ -466,6 +484,15 @@ components:
           type: string
         gameUrl:
           type: string
+        androidStoreUrl:
+          type: string
+          nullable: true
+        iosStoreUrl:
+          type: string
+          nullable: true
+        packageName:
+          type: string
+          nullable: true
         rewardPerMinute:
           type: number
 

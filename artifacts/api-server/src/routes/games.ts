@@ -48,6 +48,9 @@ router.get("/games", async (req, res) => {
       genre: g.genre,
       thumbnailUrl: g.thumbnailUrl,
       gameUrl: g.gameUrl,
+      androidStoreUrl: g.androidStoreUrl,
+      iosStoreUrl: g.iosStoreUrl,
+      packageName: g.packageName,
       creatorName: g.creatorName,
       playCount: g.playCount,
       rating: g.rating,
@@ -64,12 +67,31 @@ router.get("/games", async (req, res) => {
 router.post("/games", async (req, res) => {
   if (!(await requireAdmin(req, res))) return;
   try {
-    const { title, description, genre, thumbnailUrl, gameUrl, creatorName, rewardPerMinute } = req.body;
+    const {
+      title,
+      description,
+      genre,
+      thumbnailUrl,
+      gameUrl,
+      androidStoreUrl,
+      iosStoreUrl,
+      packageName,
+      creatorName,
+      rewardPerMinute,
+    } = req.body;
     if (!title || !description || !genre || !thumbnailUrl || !gameUrl || !creatorName || rewardPerMinute == null) {
       return res.status(400).json({ error: "Missing required fields" });
     }
     const [game] = await db.insert(gamesTable).values({
-      title, description, genre, thumbnailUrl, gameUrl, creatorName,
+      title,
+      description,
+      genre,
+      thumbnailUrl,
+      gameUrl,
+      androidStoreUrl: androidStoreUrl || null,
+      iosStoreUrl: iosStoreUrl || null,
+      packageName: packageName || null,
+      creatorName,
       rewardPerMinute: Number(rewardPerMinute),
     }).returning();
     return res.status(201).json({
@@ -79,6 +101,9 @@ router.post("/games", async (req, res) => {
       genre: game.genre,
       thumbnailUrl: game.thumbnailUrl,
       gameUrl: game.gameUrl,
+      androidStoreUrl: game.androidStoreUrl,
+      iosStoreUrl: game.iosStoreUrl,
+      packageName: game.packageName,
       creatorName: game.creatorName,
       playCount: game.playCount,
       rating: game.rating,
@@ -102,6 +127,9 @@ router.get("/games/trending", async (req, res) => {
       genre: g.genre,
       thumbnailUrl: g.thumbnailUrl,
       gameUrl: g.gameUrl,
+      androidStoreUrl: g.androidStoreUrl,
+      iosStoreUrl: g.iosStoreUrl,
+      packageName: g.packageName,
       creatorName: g.creatorName,
       playCount: g.playCount,
       rating: g.rating,
@@ -127,6 +155,9 @@ router.get("/games/:id", async (req, res) => {
       genre: game.genre,
       thumbnailUrl: game.thumbnailUrl,
       gameUrl: game.gameUrl,
+      androidStoreUrl: game.androidStoreUrl,
+      iosStoreUrl: game.iosStoreUrl,
+      packageName: game.packageName,
       creatorName: game.creatorName,
       playCount: game.playCount,
       rating: game.rating,
@@ -144,13 +175,26 @@ router.patch("/games/:id", async (req, res) => {
   if (!(await requireAdmin(req, res))) return;
   try {
     const id = Number(req.params.id);
-    const { title, description, genre, thumbnailUrl, gameUrl, rewardPerMinute } = req.body;
+    const {
+      title,
+      description,
+      genre,
+      thumbnailUrl,
+      gameUrl,
+      androidStoreUrl,
+      iosStoreUrl,
+      packageName,
+      rewardPerMinute,
+    } = req.body;
     const updates: Record<string, unknown> = {};
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
     if (genre !== undefined) updates.genre = genre;
     if (thumbnailUrl !== undefined) updates.thumbnailUrl = thumbnailUrl;
     if (gameUrl !== undefined) updates.gameUrl = gameUrl;
+    if (androidStoreUrl !== undefined) updates.androidStoreUrl = androidStoreUrl || null;
+    if (iosStoreUrl !== undefined) updates.iosStoreUrl = iosStoreUrl || null;
+    if (packageName !== undefined) updates.packageName = packageName || null;
     if (rewardPerMinute !== undefined) updates.rewardPerMinute = Number(rewardPerMinute);
     const [game] = await db.update(gamesTable).set(updates).where(eq(gamesTable.id, id)).returning();
     if (!game) return res.status(404).json({ error: "Game not found" });
@@ -161,6 +205,9 @@ router.patch("/games/:id", async (req, res) => {
       genre: game.genre,
       thumbnailUrl: game.thumbnailUrl,
       gameUrl: game.gameUrl,
+      androidStoreUrl: game.androidStoreUrl,
+      iosStoreUrl: game.iosStoreUrl,
+      packageName: game.packageName,
       creatorName: game.creatorName,
       playCount: game.playCount,
       rating: game.rating,

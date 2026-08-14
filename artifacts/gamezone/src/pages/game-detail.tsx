@@ -17,6 +17,21 @@ export function GameDetailPage() {
     }
   });
 
+  const handlePlayAndEarn = () => {
+    if (!game) return;
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const storeUrl = /iphone|ipad|ipod/.test(userAgent)
+      ? game.iosStoreUrl || game.androidStoreUrl
+      : game.androidStoreUrl || game.iosStoreUrl;
+
+    if (storeUrl) {
+      window.location.assign(storeUrl);
+      return;
+    }
+
+    window.location.assign(`/play/${game.id}`);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-8">
@@ -101,11 +116,13 @@ export function GameDetailPage() {
               <p className="text-xs text-muted-foreground">points per minute played</p>
             </div>
 
-            <Link href={`/play/${game.id}`} className="w-full">
-              <Button size="lg" className="w-full h-16 text-lg font-bold shadow-[0_0_40px_-10px_hsl(var(--primary))]">
-                PLAY NOW <Play className="w-6 h-6 ml-2 fill-current" />
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              onClick={handlePlayAndEarn}
+              className="w-full h-16 text-lg font-bold shadow-[0_0_40px_-10px_hsl(var(--primary))]"
+            >
+              PLAY AND EARN <Play className="w-6 h-6 ml-2 fill-current" />
+            </Button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
