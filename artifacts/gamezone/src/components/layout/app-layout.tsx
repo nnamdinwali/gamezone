@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useManusAuth } from "@/lib/manus-auth";
 import { Link, useLocation } from "wouter";
 import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
+import { useNotifications } from "@/lib/notifications";
 import { ErrorBoundary } from "@/components/error-boundary";
 
 const bottomLinks = [
@@ -20,6 +22,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const profileHref = currentUser?.id ? `/profile/${currentUser.id}` : "/profile";
   const avatar = currentUser?.avatarUrl || sessionUser?.avatarUrl;
   const initials = (currentUser?.username || sessionUser?.username || "P").slice(0, 1).toUpperCase();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { data: notificationData, isLoading: notificationsLoading, isError: notificationsError, refetch: refetchNotifications, markRead } = useNotifications(Boolean(currentUser?.id));
 
   return (
     <div className="min-h-screen bg-[#10111f] text-white">
@@ -37,7 +41,29 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-[#00c978] px-3 py-2 text-sm font-bold text-white sm:flex"><span className="text-[#00d57e]">$</span>{Number(currentUser?.balance ?? 0).toFixed(2)}</Link>
               <Link href="/games" className="hidden items-center gap-2 rounded-xl border border-[#8584a4] px-3 py-2 text-sm font-bold text-white sm:flex"><Ticket className="h-4 w-4 text-[#b9b8df]" />0</Link>
-              <button type="button" aria-label="Notifications" className="rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white"><Bell className="h-6 w-6 fill-current" strokeWidth={1.5} /></button>
+              <div className="relative">
+                <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((open) => !open)} className="relative rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white">
+                  <Bell className="h-6 w-6 fill-current" strokeWidth={1.5} />
+                  {(notificationData?.unreadCount ?? 0) > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[#10111f] bg-[#00d57e]" aria-label={`${notificationData?.unreadCount} unread notifications`} />}
+                </button>
+                {notificationsOpen && (
+                  <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#1a1b2b] shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                      <h2 className="text-sm font-semibold text-white">Notifications</h2>
+                      <span className="text-xs text-[#aaa9bb]">{notificationData?.unreadCount ?? 0} unread</span>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notificationsLoading ? <p className="px-4 py-6 text-sm text-[#aaa9bb]">Loading notifications…</p> : notificationsError ? <div className="space-y-3 px-4 py-6 text-sm text-[#f0a7a7]"><p>Notifications are temporarily unavailable.</p><button type="button" onClick={() => void refetchNotifications()} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/5">Try again</button></div> : notificationData?.notifications.length ? notificationData.notifications.map((notification) => (
+                        <button key={notification.id} type="button" onClick={() => { if (!notification.readAt) markRead.mutate(notification.id); }} className={`block w-full border-b border-white/5 px-4 py-3 text-left last:border-0 hover:bg-white/5 ${notification.readAt ? "opacity-70" : ""}`}>
+                          <div className="flex items-start justify-between gap-3"><span className="text-sm font-semibold text-white">{notification.title}</span>{!notification.readAt && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#00d57e]" />}</div>
+                          <p className="mt-1 text-sm leading-5 text-[#c0bfd0]">{notification.message}</p>
+                          <time className="mt-2 block text-[11px] text-[#89889a]" dateTime={notification.createdAt}>{new Date(notification.createdAt).toLocaleString()}</time>
+                        </button>
+                      )) : <p className="px-4 py-6 text-sm text-[#aaa9bb]">No notifications yet.</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button type="button" onClick={() => void logout()} aria-label="Log out" className="hidden rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white md:block"><LogOut className="h-5 w-5" /></button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Bell, ChevronRight, Gift, Search, Ticket, Trophy, WalletCards } from "lucide-react";
+import { ChevronRight, Gift, Search, Ticket, Trophy, WalletCards } from "lucide-react";
 import {
   getListGamesQueryKey,
   useGetUserStats,
@@ -10,10 +10,6 @@ import { useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 
 const CASHOUT_TARGET = 2.5;
-
-function initials(value?: string | null) {
-  return (value || "G").trim().slice(0, 1).toUpperCase();
-}
 
 export function HomePage() {
   const formatCurrency = useMoney();
@@ -35,25 +31,6 @@ export function HomePage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 pb-8">
       <section className="space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-[#292b3b] shadow-lg">
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="Your avatar" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-xl font-bold text-white/80">{initials(user?.username)}</div>
-              )}
-            </div>
-            <div>
-              <p className="text-xs font-medium text-[#9a9bad]">Welcome back</p>
-              <p className="text-lg font-semibold text-white">{user?.username || "Player"}</p>
-            </div>
-          </div>
-          <button type="button" aria-label="Notifications" className="rounded-full p-2 text-[#9b9bad] transition hover:bg-white/5 hover:text-white">
-            <Bell className="h-7 w-7 fill-current" strokeWidth={1.5} />
-          </button>
-        </div>
-
         <div className="flex items-center justify-center gap-3">
           <div className="flex min-w-[132px] items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)]">
             <span className="text-[#00d57e]">$</span>
@@ -68,9 +45,10 @@ export function HomePage() {
 
       <section className="space-y-3">
         <div className="text-center text-xl font-medium text-white">Next cashout</div>
+        <p className="text-center text-sm text-[#aaa9bb]">{balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
         <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5">
-          <div className="flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] px-5 text-sm font-semibold text-white transition-all duration-700" style={{ width: `${Math.max(cashoutProgress, 22)}%` }}>
-            <span>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
+          <div className="flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] px-5 text-sm font-semibold text-white transition-all duration-700" style={{ width: `${cashoutProgress}%` }}>
+            <span className={cashoutProgress === 0 ? "sr-only" : ""}>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
           </div>
         </div>
       </section>
