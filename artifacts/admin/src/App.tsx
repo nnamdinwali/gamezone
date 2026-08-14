@@ -4,6 +4,8 @@ import { Activity, Ban, Gamepad2, LogOut, ShieldCheck, Users } from "lucide-reac
 import { adminFetch } from "./main";
 
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
+type AdminGame = { id: number; title: string; genre: string; androidStoreUrl: string | null; iosStoreUrl: string | null; playCount: number };
+type Milestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean };
 type AdminUser = {
   id: number;
   username: string;
@@ -35,6 +37,10 @@ export default function App() {
   const { user } = useUser();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [games, setGames] = useState<AdminGame[]>([]);
+  const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestoneForm, setMilestoneForm] = useState({ level: "10", title: "Reach level 10", rewardAmount: "0.10", currency: "USD", countryCode: "US" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -42,12 +48,15 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const [nextOverview, nextUsers] = await Promise.all([
+      const [nextOverview, nextUsers, nextGames] = await Promise.all([
         adminFetch<Overview>("/api/admin/overview", getToken),
         adminFetch<AdminUser[]>("/api/admin/users", getToken),
+        adminFetch<AdminGame[]>("/api/games", getToken),
       ]);
       setOverview(nextOverview);
       setUsers(nextUsers);
+      setGames(nextGames);
+      setSelectedGameId((current) => current ?? nextGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
     } finally {
@@ -58,6 +67,13 @@ export default function App() {
   useEffect(() => {
     if (isSignedIn) loadAdminData();
   }, [isSignedIn, loadAdminData]);
+
+  useEffect(() => {
+    if (!selectedGameId || !isSignedIn) return;
+    adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`, getToken)
+      .then(setMilestones)
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load milestones"));
+  }, [getToken, isSignedIn, selectedGameId]);
 
   if (!isLoaded) return <div className="loading">Loading admin session…</div>;
   if (!isSignedIn) return <SignInGate />;
@@ -73,6 +89,24 @@ export default function App() {
       await loadAdminData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to ban user");
+    }
+  };
+
+  const createMilestone = async () => {
+    if (!selectedGameId) return;
+    try {
+      await adminFetch(`/api/admin/games/${selectedGameId}/milestones`, getToken, {
+        method: "POST",
+        body: JSON.stringify({
+          ...milestoneForm,
+          level: Number(milestoneForm.level),
+          rewardAmount: Number(milestoneForm.rewardAmount),
+        }),
+      });
+      const refreshed = await adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`, getToken);
+      setMilestones(refreshed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to create milestone");
     }
   };
 
@@ -99,6 +133,11 @@ export default function App() {
           <Metric icon={<Gamepad2 />} label="Games" value={overview?.games ?? "—"} />
           <Metric icon={<Activity />} label="Active sessions" value={overview?.activeSessions ?? "—"} />
           <Metric icon={<Ban />} label="Banned accounts" value={overview?.bannedUsers ?? "—"} />
+        </section>
+        <section className="panel game-panel">
+          <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Games and milestones</h2></div><span>{games.length} games</span></div>
+          <div className="game-controls"><select value={selectedGameId ?? ""} onChange={(event) => setSelectedGameId(Number(event.target.value))}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select><span>{selectedGameId ? "Configure reward schedule" : "Choose a game to manage milestones"}</span></div>
+          {selectedGameId && <><div className="milestone-form"><input type="number" min="1" value={milestoneForm.level} onChange={(event) => setMilestoneForm({ ...milestoneForm, level: event.target.value })} placeholder="Level" /><input value={milestoneForm.title} onChange={(event) => setMilestoneForm({ ...milestoneForm, title: event.target.value })} placeholder="Milestone title" /><input type="number" min="0" step="0.01" value={milestoneForm.rewardAmount} onChange={(event) => setMilestoneForm({ ...milestoneForm, rewardAmount: event.target.value })} placeholder="Reward" /><input value={milestoneForm.currency} onChange={(event) => setMilestoneForm({ ...milestoneForm, currency: event.target.value.toUpperCase() })} placeholder="Currency" /><input value={milestoneForm.countryCode} onChange={(event) => setMilestoneForm({ ...milestoneForm, countryCode: event.target.value.toUpperCase() })} placeholder="Country" /><button className="refresh" onClick={createMilestone}>Add milestone</button></div><div className="milestone-list">{milestones.map((milestone) => <div className="milestone" key={milestone.id}><strong>Level {milestone.level}</strong><span>{milestone.title}</span><b>{milestone.currency} {milestone.rewardAmount.toFixed(2)}</b><small>{milestone.countryCode}</small></div>)}</div></>}
         </section>
         <section className="panel">
           <div className="panel-title"><div><p className="eyebrow">ACCOUNT MANAGEMENT</p><h2>Users</h2></div><span>{loading ? "Updating…" : `${users.length} records`}</span></div>

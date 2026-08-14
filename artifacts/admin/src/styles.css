@@ -41,8 +41,18 @@ td small { margin-top: 4px; color: #7e9a85; }
 .action { border: 1px solid; border-radius: 7px; padding: 7px 11px; font-size: 12px; font-weight: 800; background: transparent; }
 .action.ban { border-color: #754040; color: #ffadad; }
 .action.unban { border-color: #3c754d; color: #8ff0a8; }
+.game-panel { margin-bottom: 24px; }
+.game-controls { display: flex; align-items: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid #183421; }
+.game-controls select, .milestone-form input { border: 1px solid #31563a; border-radius: 8px; padding: 10px 12px; color: #dff5e3; background: #0a1c10; }
+.game-controls span { color: #7e9a85; font-size: 13px; }
+.milestone-form { display: grid; grid-template-columns: .7fr 2fr 1fr .8fr .8fr auto; gap: 8px; padding: 18px 24px; border-bottom: 1px solid #183421; }
+.milestone-list { display: grid; gap: 8px; padding: 18px 24px; }
+.milestone { display: grid; grid-template-columns: .7fr 2fr 1fr .6fr; gap: 12px; align-items: center; padding: 12px; border: 1px solid #24482d; border-radius: 10px; color: #cbe0ce; }
+.milestone b { color: #79ed99; }
+.milestone small { color: #7e9a85; }
 .next { margin-top: 24px; padding: 24px; }
 .next div { flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .next span { padding: 9px 12px; border: 1px dashed #365b3f; border-radius: 9px; color: #9fb5a5; font-size: 13px; }
+@media (max-width: 900px) { .milestone-form { grid-template-columns: repeat(2, 1fr); } .milestone-form .refresh { grid-column: span 2; } }
 @media (max-width: 760px) { .topbar { padding: 0 5vw; } .account > span { display: none; } .content { width: 90vw; padding-top: 34px; } .heading { align-items: flex-start; flex-direction: column; } .metrics { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 420px) { .metrics { grid-template-columns: 1fr; } }
