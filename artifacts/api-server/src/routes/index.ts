@@ -7,6 +7,7 @@ import earningsRouter from "./earnings";
 import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
 import adminRouter from "./admin";
+import gameEventsRouter from "./game_events";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(earningsRouter);
 router.use(leaderboardRouter);
 router.use(dashboardRouter);
 router.use(adminRouter);
+router.use(gameEventsRouter);
 
 export default router;
