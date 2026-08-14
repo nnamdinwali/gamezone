@@ -41,6 +41,7 @@ export default function App() {
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [milestoneForm, setMilestoneForm] = useState({ level: "10", title: "Reach level 10", rewardAmount: "0.10", currency: "USD", countryCode: "US" });
+  const [gameForm, setGameForm] = useState({ title: "", description: "", genre: "Arcade", thumbnailUrl: "", gameUrl: "https://example.com", androidStoreUrl: "", iosStoreUrl: "", packageName: "", creatorName: "GameZone Studio", rewardPerMinute: "0" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -92,6 +93,20 @@ export default function App() {
     }
   };
 
+  const createGame = async () => {
+    try {
+      const created = await adminFetch<AdminGame>("/api/games", getToken, {
+        method: "POST",
+        body: JSON.stringify({ ...gameForm, rewardPerMinute: Number(gameForm.rewardPerMinute) }),
+      });
+      setGames((current) => [created, ...current]);
+      setSelectedGameId(created.id);
+      setGameForm({ ...gameForm, title: "", description: "", thumbnailUrl: "", androidStoreUrl: "", iosStoreUrl: "", packageName: "" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to upload game");
+    }
+  };
+
   const createMilestone = async () => {
     if (!selectedGameId) return;
     try {
@@ -135,7 +150,9 @@ export default function App() {
           <Metric icon={<Ban />} label="Banned accounts" value={overview?.bannedUsers ?? "—"} />
         </section>
         <section className="panel game-panel">
-          <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Games and milestones</h2></div><span>{games.length} games</span></div>
+          <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Upload a game offer</h2></div><span>Store-link APK flow</span></div>
+          <div className="upload-grid"><input placeholder="Game title" value={gameForm.title} onChange={(e) => setGameForm({ ...gameForm, title: e.target.value })} /><input placeholder="Creator / studio" value={gameForm.creatorName} onChange={(e) => setGameForm({ ...gameForm, creatorName: e.target.value })} /><input placeholder="Genre" value={gameForm.genre} onChange={(e) => setGameForm({ ...gameForm, genre: e.target.value })} /><input placeholder="Thumbnail URL" value={gameForm.thumbnailUrl} onChange={(e) => setGameForm({ ...gameForm, thumbnailUrl: e.target.value })} /><input placeholder="Google Play URL" value={gameForm.androidStoreUrl} onChange={(e) => setGameForm({ ...gameForm, androidStoreUrl: e.target.value })} /><input placeholder="App Store URL" value={gameForm.iosStoreUrl} onChange={(e) => setGameForm({ ...gameForm, iosStoreUrl: e.target.value })} /><input placeholder="Android package name" value={gameForm.packageName} onChange={(e) => setGameForm({ ...gameForm, packageName: e.target.value })} /><input placeholder="Description" value={gameForm.description} onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })} /><button className="refresh" onClick={createGame}>Create game offer</button></div>
+          <div className="panel-title"><div><p className="eyebrow">REWARD MANAGEMENT</p><h2>Games and milestones</h2></div><span>{games.length} games</span></div>
           <div className="game-controls"><select value={selectedGameId ?? ""} onChange={(event) => setSelectedGameId(Number(event.target.value))}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select><span>{selectedGameId ? "Configure reward schedule" : "Choose a game to manage milestones"}</span></div>
           {selectedGameId && <><div className="milestone-form"><input type="number" min="1" value={milestoneForm.level} onChange={(event) => setMilestoneForm({ ...milestoneForm, level: event.target.value })} placeholder="Level" /><input value={milestoneForm.title} onChange={(event) => setMilestoneForm({ ...milestoneForm, title: event.target.value })} placeholder="Milestone title" /><input type="number" min="0" step="0.01" value={milestoneForm.rewardAmount} onChange={(event) => setMilestoneForm({ ...milestoneForm, rewardAmount: event.target.value })} placeholder="Reward" /><input value={milestoneForm.currency} onChange={(event) => setMilestoneForm({ ...milestoneForm, currency: event.target.value.toUpperCase() })} placeholder="Currency" /><input value={milestoneForm.countryCode} onChange={(event) => setMilestoneForm({ ...milestoneForm, countryCode: event.target.value.toUpperCase() })} placeholder="Country" /><button className="refresh" onClick={createMilestone}>Add milestone</button></div><div className="milestone-list">{milestones.map((milestone) => <div className="milestone" key={milestone.id}><strong>Level {milestone.level}</strong><span>{milestone.title}</span><b>{milestone.currency} {milestone.rewardAmount.toFixed(2)}</b><small>{milestone.countryCode}</small></div>)}</div></>}
         </section>
