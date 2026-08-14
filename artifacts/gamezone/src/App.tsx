@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { useManusAuth, startLogin } from '@/lib/manus-auth';
 import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -71,15 +72,44 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   );
 }
 
+function AuthLoading({ error, retry }: { error?: unknown; retry: () => void }) {
+  const message = error instanceof Error ? error.message : 'The session check is taking longer than expected.';
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4 text-[#f2fff5]">
+      <div className="w-full max-w-md rounded-2xl border border-[#31533d] bg-[#102319] p-8 text-center">
+        <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-[#39e36b]/30" aria-hidden="true" />
+        <h1 className="mt-5 text-2xl font-bold">Connecting to GameZone</h1>
+        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">{message}</p>
+        <button type="button" onClick={retry} className="mt-6 rounded-xl bg-[#39e36b] px-5 py-3 font-bold text-[#06200d]">Try again</button>
+        <Link href="/" className="ml-3 text-sm text-[#62f07f] hover:underline">Continue as visitor</Link>
+      </div>
+    </main>
+  );
+}
+
+function useAuthGate() {
+  const auth = useManusAuth();
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (auth.isLoaded) return;
+    const timer = window.setTimeout(() => setTimedOut(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, [auth.isLoaded]);
+  const retry = () => { setTimedOut(false); window.location.reload(); };
+  return { ...auth, timedOut, retry };
+}
+
 function HomeRedirect() {
-  const { isLoaded, isSignedIn } = useManusAuth();
-  if (!isLoaded) return <div className="min-h-[100dvh] bg-background" />;
+  const { isLoaded, isSignedIn, error, timedOut, retry } = useAuthGate();
+  if (!isLoaded && !timedOut) return <AuthLoading retry={retry} />;
+  if (timedOut) return <AuthLoading error={error} retry={retry} />;
   return isSignedIn ? <AppLayout><HomePage /></AppLayout> : <PublicLanding />;
 }
 
 function Protected({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useManusAuth();
-  if (!isLoaded) return <div className="min-h-[100dvh] bg-background" />;
+  const { isLoaded, isSignedIn, error, timedOut, retry } = useAuthGate();
+  if (!isLoaded && !timedOut) return <AuthLoading retry={retry} />;
+  if (timedOut) return <AuthLoading error={error} retry={retry} />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   return <AppLayout>{children}</AppLayout>;
 }
