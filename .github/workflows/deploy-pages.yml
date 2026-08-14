@@ -20,6 +20,7 @@ jobs:
     env:
       PORT: '5000'
       BASE_PATH: /gamezone/
+      ADMIN_BASE_PATH: /gamezone/admin/
       # Clerk publishable keys are public by design; repo secret overrides it if set.
       VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_dXByaWdodC1mYWxjb24tMi5jbGVyay5hY2NvdW50cy5kZXYk' }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
@@ -33,8 +34,13 @@ jobs:
           node-version: 22
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm --filter @workspace/gamezone run build
-      # SPA fallback so deep links like /gamezone/games work
+      - run: PORT=5174 BASE_PATH=${ADMIN_BASE_PATH} VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY} VITE_API_URL=${VITE_API_URL} pnpm --filter @workspace/admin run build
+      # SPA fallbacks for both the player site and the separate admin app.
       - run: cp artifacts/gamezone/dist/public/index.html artifacts/gamezone/dist/public/404.html
+      - run: mkdir -p artifacts/gamezone/dist/public/admin
+      - run: cp artifacts/admin/dist/index.html artifacts/gamezone/dist/public/admin/index.html
+      - run: cp artifacts/admin/dist/index.html artifacts/gamezone/dist/public/admin/404.html
+      - run: cp -R artifacts/admin/dist/assets artifacts/gamezone/dist/public/admin/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
