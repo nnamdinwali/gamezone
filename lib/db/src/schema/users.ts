@@ -11,6 +11,8 @@ export const usersTable = pgTable("users", {
   balance: real("balance").notNull().default(0),
   totalEarnings: real("total_earnings").notNull().default(0),
   gamesPlayed: integer("games_played").notNull().default(0),
+  bannedAt: timestamp("banned_at", { withTimezone: true }),
+  banReason: text("ban_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

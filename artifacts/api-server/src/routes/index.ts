@@ -6,6 +6,7 @@ import playSessionsRouter from "./play_sessions";
 import earningsRouter from "./earnings";
 import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(playSessionsRouter);
 router.use(earningsRouter);
 router.use(leaderboardRouter);
 router.use(dashboardRouter);
+router.use(adminRouter);
 
 export default router;
