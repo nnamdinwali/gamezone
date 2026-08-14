@@ -5,8 +5,8 @@ import { Gamepad2, Users, Coins, Activity, TrendingUp } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 
 export function DashboardPage() {
-  const { data: stats, isLoading } = useGetDashboardStats({
-    query: { queryKey: getGetDashboardStatsQueryKey() }
+  const { data: stats, isLoading, isError, refetch } = useGetDashboardStats({
+    query: { queryKey: getGetDashboardStatsQueryKey(), retry: 1, refetchOnWindowFocus: false }
   });
 
   if (isLoading) {
@@ -21,7 +21,17 @@ export function DashboardPage() {
     );
   }
 
-  if (!stats) return null;
+  if (isError || !stats) {
+    return (
+      <div className="flex min-h-[360px] items-center justify-center rounded-2xl border border-border bg-card/50 p-8 text-center">
+        <div className="max-w-md space-y-4">
+          <h1 className="text-2xl font-bold">Dashboard temporarily unavailable</h1>
+          <p className="text-muted-foreground">Your session is still being synchronized. Try again and the dashboard will reload without leaving the page.</p>
+          <button type="button" onClick={() => void refetch()} className="rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground hover:opacity-90">Retry dashboard</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">

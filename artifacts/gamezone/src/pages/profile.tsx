@@ -65,13 +65,14 @@ export function ProfilePage() {
     data: currentUser,
     isLoading: isCurrentUserLoading,
     isError: isCurrentUserError,
+    refetch: refetchCurrentUser,
   } = useCurrentUser();
 
   const routeId = params?.id ? parseInt(params.id, 10) : NaN;
   const id = Number.isFinite(routeId) ? routeId : Number(currentUser?.id ?? 0);
 
-  const { data: stats } = useGetUserStats(id, {
-    query: { enabled: id > 0, queryKey: getGetUserStatsQueryKey(id) }
+  const { data: stats, refetch: refetchStats } = useGetUserStats(id, {
+    query: { enabled: id > 0, retry: 1, refetchOnWindowFocus: false, queryKey: getGetUserStatsQueryKey(id) }
   });
 
   // The current-user response already contains the complete profile. Using it
@@ -114,7 +115,9 @@ export function ProfilePage() {
   if (isCurrentUserError || !user || id <= 0) {
     return (
       <div className="py-20 text-center">
-        <h2 className="text-2xl font-bold">Profile unavailable</h2>
+        <h2 className="text-2xl font-bold">Profile temporarily unavailable</h2>
+        <p className="mx-auto mt-3 max-w-md text-muted-foreground">Your authenticated profile is still synchronizing. Retry without leaving this page.</p>
+        <button type="button" onClick={() => { void refetchCurrentUser(); void refetchStats(); }} className="mt-6 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground hover:opacity-90">Retry profile</button>
       </div>
     );
   }

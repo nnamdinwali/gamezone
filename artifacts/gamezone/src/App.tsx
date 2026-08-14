@@ -1,14 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
-import { setAuthTokenGetter } from '@workspace/api-client-react';
+import { useManusAuth, startLogin } from '@/lib/manus-auth';
 import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
-import { navigate } from 'wouter/use-browser-location';
-import { useEffect, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { CurrencyProvider } from '@/lib/currency';
-import { useIsAdmin } from '@/lib/is-admin';
 
 import { HomePage } from '@/pages/home';
 import { GamesPage } from '@/pages/games';
@@ -32,83 +25,6 @@ const queryClient = new QueryClient({
 });
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-// Prefer the explicitly configured key. Host-derived keys only make sense on
-// Clerk-managed preview hosts; on GitHub Pages the derivation must not win over
-// the real instance key, or the frontend and API end up on different instances.
-const clerkPubKey =
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
-  publishableKeyFromHost(window.location.hostname, undefined);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-
-if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-
-// Clerk hands us either an absolute URL or a path that may or may not already
-// include the deployment base path (e.g. "/gamezone"). Normalise both so that
-// navigation works identically at the domain root and in a sub-directory
-// deployment such as GitHub Pages.
-function toAppPath(to: string) {
-  let path = to;
-  if (/^https?:\/\//i.test(path)) {
-    const url = new URL(path);
-    path = `${url.pathname}${url.search}${url.hash}`;
-  }
-  if (!path.startsWith('/')) path = `/${path}`;
-  if (basePath && !path.startsWith(`${basePath}/`) && path !== basePath) {
-    path = `${basePath}${path}`;
-  }
-  return path;
-}
-
-const afterAuthUrl = `${basePath}/`;
-
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: 'clerk',
-  options: {
-    logoPlacement: 'inside' as const,
-    logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
-  },
-  variables: {
-    colorPrimary: '#39e36b',
-    colorForeground: '#f2fff5',
-    colorMutedForeground: '#9ab4a1',
-    colorDanger: '#ff8d86',
-    colorBackground: '#102319',
-    colorInput: '#0b1b12',
-    colorInputForeground: '#f2fff5',
-    colorNeutral: '#31533d',
-    fontFamily: 'Plus Jakarta Sans',
-    borderRadius: '0.9rem',
-  },
-  elements: {
-    rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[#102319] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[#31533d]',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[#f2fff5] font-bold',
-    headerSubtitle: 'text-[#b1c9b8]',
-    socialButtonsBlockButtonText: 'text-[#f2fff5]',
-    formFieldLabel: 'text-[#d9f5df]',
-    footerActionLink: 'text-[#62f07f]',
-    footerActionText: 'text-[#b1c9b8]',
-    dividerText: 'text-[#9ab4a1]',
-    identityPreviewEditButton: 'text-[#62f07f]',
-    formFieldSuccessText: 'text-[#62f07f]',
-    alertText: 'text-[#ffd6d2]',
-    logoBox: 'h-12',
-    logoImage: 'h-10 w-auto',
-    socialButtonsBlockButton: 'border-[#31533d] bg-[#172d20] hover:bg-[#20402b]',
-    formButtonPrimary: 'bg-[#39e36b] text-[#06200d] hover:bg-[#62f07f]',
-    formFieldInput: 'border-[#31533d] bg-[#0b1b12] text-[#f2fff5]',
-    footerAction: 'border-t border-[#31533d]',
-    dividerLine: 'bg-[#31533d]',
-    alert: 'border-[#7a423e] bg-[#351e1d]',
-    otpCodeFieldInput: 'border-[#31533d] bg-[#0b1b12] text-[#f2fff5]',
-    formFieldRow: 'text-[#f2fff5]',
-    main: 'bg-transparent',
-  },
-};
 
 function PublicLanding() {
   return (
@@ -142,71 +58,44 @@ function PublicLanding() {
   );
 }
 
+function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4 text-[#f2fff5]">
+      <div className="w-full max-w-md rounded-2xl border border-[#31533d] bg-[#102319] p-8 text-center">
+        <h1 className="font-heading text-3xl font-bold">{mode === 'sign-in' ? 'Welcome back' : 'Join ROCKCITY GAMES'}</h1>
+        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Continue with your Manus account. Your GameZone profile and rewards are created automatically after authentication.</p>
+        <button type="button" onClick={startLogin} className="mt-7 w-full rounded-xl bg-[#39e36b] px-5 py-3.5 font-bold text-[#06200d] hover:bg-[#62f07f]">{mode === 'sign-in' ? 'Sign in with Manus' : 'Create account with Manus'}</button>
+        <Link href="/" className="mt-5 inline-block text-sm text-[#62f07f] hover:underline">Return home</Link>
+      </div>
+    </main>
+  );
+}
+
 function HomeRedirect() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useManusAuth();
   if (!isLoaded) return <div className="min-h-[100dvh] bg-background" />;
   return isSignedIn ? <AppLayout><HomePage /></AppLayout> : <PublicLanding />;
 }
 
 function Protected({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useManusAuth();
   if (!isLoaded) return <div className="min-h-[100dvh] bg-background" />;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   return <AppLayout>{children}</AppLayout>;
-}
-
-function AdminOnly({ children }: { children: React.ReactNode }) {
-  const { isAdmin, isLoaded } = useIsAdmin();
-  if (!isLoaded) return <div className="min-h-[50vh]" />;
-  if (!isAdmin) return <Redirect to="/" />;
-  return <>{children}</>;
-}
-
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const prevUserId = useRef<string | null | undefined>(undefined);
-  useEffect(() => addListener(({ user }) => {
-    const id = user?.id ?? null;
-    if (prevUserId.current !== undefined && prevUserId.current !== id) queryClient.clear();
-    prevUserId.current = id;
-  }), [addListener]);
-  return null;
-}
-
-/**
- * Keep the API client in sync with Clerk's React auth state.
- *
- * Reading window.Clerk directly is racy: the global can exist before its
- * session has finished loading, so the first /users/me request is sent
- * without a bearer token and React Query does not retry it. Clerk's supported
- * getToken() hook always reads the active session and refreshes the token when
- * needed.
- */
-function ClerkApiAuthBridge() {
-  const { getToken } = useAuth();
-
-  setAuthTokenGetter(getToken);
-
-  useEffect(() => {
-    return () => setAuthTokenGetter(null);
-  }, [getToken]);
-
-  return null;
 }
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
-      <Route path="/sign-in/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} fallbackRedirectUrl={afterAuthUrl} /></div>} />
-      <Route path="/sign-up/*?" component={() => <div className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} fallbackRedirectUrl={afterAuthUrl} signInFallbackRedirectUrl={afterAuthUrl} /></div>} />
+      <Route path="/sign-in/*?" component={() => <AuthScreen mode="sign-in" />} />
+      <Route path="/sign-up/*?" component={() => <AuthScreen mode="sign-up" />} />
       <Route path="/games"><Protected><GamesPage /></Protected></Route>
       <Route path="/games/:id"><Protected><GameDetailPage /></Protected></Route>
       <Route path="/play/:id"><Protected><PlayPage /></Protected></Route>
       <Route path="/leaderboard"><Protected><LeaderboardPage /></Protected></Route>
       <Route path="/earnings"><Protected><EarningsPage /></Protected></Route>
-      <Route path="/upload"><Protected><AdminOnly><UploadPage /></AdminOnly></Protected></Route>
-      <Route path="/profile"><Protected><ProfilePage /></Protected></Route>
+      <Route path="/upload"><Protected><UploadPage /></Protected></Route>
       <Route path="/profile/:id"><Protected><ProfilePage /></Protected></Route>
       <Route path="/dashboard"><Protected><DashboardPage /></Protected></Route>
       <Route component={NotFound} />
@@ -214,22 +103,12 @@ function Router() {
   );
 }
 
-function ClerkApp() {
-  return (
-    <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} signInFallbackRedirectUrl={afterAuthUrl} signUpFallbackRedirectUrl={afterAuthUrl} afterSignOutUrl={afterAuthUrl} localization={{ signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your ROCKCITY GAMES account' } }, signUp: { start: { title: 'Join ROCKCITY GAMES', subtitle: 'Play smart, earn daily,' } } }} routerPush={(to) => navigate(toAppPath(to))} routerReplace={(to) => navigate(toAppPath(to), { replace: true })} >
-      <QueryClientProvider client={queryClient}>
-        <CurrencyProvider>
-          <ClerkApiAuthBridge />
-          <ClerkQueryClientCacheInvalidator />
-          <WouterRouter base={basePath}><Router /></WouterRouter>
-        </CurrencyProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
-  );
-}
-
 function App() {
-  return <ClerkApp />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <WouterRouter base={basePath}><Router /></WouterRouter>
+    </QueryClientProvider>
+  );
 }
 
 export default App;
