@@ -1,37 +1,62 @@
-import { useManusAuth } from "@/lib/manus-auth";
-import { Link } from "wouter";
-import { LogOut, UserRound } from "lucide-react";
+import { useClerk, useUser } from "@clerk/react";
+import { Link, useLocation } from "wouter";
+import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
 import { Sidebar } from "./sidebar";
-import { MobileNav } from "./mobile-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
 import { ErrorBoundary } from "@/components/error-boundary";
 
+const bottomLinks = [
+  { href: "/", label: "Earn", icon: LayoutGrid },
+  { href: "/games", label: "My Offers", icon: Ticket },
+  { href: "/earnings", label: "Cashout", icon: WalletCards },
+  { href: "/leaderboard", label: "Rewards", icon: Trophy },
+];
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useManusAuth();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentUser();
-  const profileId = currentUser?.id;
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const { data: currentUser } = useCurrentUser();
+  const [location] = useLocation();
+  const profileHref = currentUser?.id ? `/profile/${currentUser.id}` : "/profile";
+  const avatar = currentUser?.avatarUrl || user?.imageUrl;
+  const initials = (currentUser?.username || user?.firstName || "P").slice(0, 1).toUpperCase();
+
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-[#10111f] text-white">
       <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0 max-w-full relative">
-        <header className="flex items-center justify-between gap-3 border-b border-border bg-background/80 px-6 py-3 backdrop-blur md:px-8">
-          <MobileNav />
-          <div className="flex items-center gap-3">
-          <Link href={profileId ? `/profile/${profileId}` : "/dashboard"} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground" data-testid="link-session-profile">
-            <UserRound className="h-4 w-4" /> {isCurrentUserLoading ? "Loading profile…" : currentUser?.username || user?.username || "Your profile"}
-          </Link>
-          <button type="button" onClick={() => void logout()} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-muted-foreground hover:border-primary hover:text-primary" data-testid="button-session-logout">
-            <LogOut className="h-4 w-4" /> Log out
-          </button>
+      <main className="relative min-h-screen min-w-0 md:ml-64">
+        <header className="sticky top-0 z-40 border-b border-white/5 bg-[#10111f]/95 px-4 py-4 backdrop-blur-xl sm:px-6 md:px-10">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+            <Link href={profileHref} className="flex items-center gap-3 rounded-2xl" data-testid="link-session-profile">
+              <div className="h-11 w-11 overflow-hidden rounded-2xl border border-white/10 bg-[#2b2c3c]">
+                {avatar ? <img src={avatar} alt="Profile" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center font-bold text-[#d5d4df]">{initials}</div>}
+              </div>
+              <span className="hidden text-sm font-semibold text-white sm:block">{currentUser?.username || user?.firstName || "Player"}</span>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-[#00c978] px-3 py-2 text-sm font-bold text-white sm:flex"><span className="text-[#00d57e]">$</span>{Number(currentUser?.balance ?? 0).toFixed(2)}</Link>
+              <Link href="/games" className="hidden items-center gap-2 rounded-xl border border-[#8584a4] px-3 py-2 text-sm font-bold text-white sm:flex"><Ticket className="h-4 w-4 text-[#b9b8df]" />0</Link>
+              <button type="button" aria-label="Notifications" className="rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white"><Bell className="h-6 w-6 fill-current" strokeWidth={1.5} /></button>
+              <button type="button" onClick={() => signOut({ redirectUrl: import.meta.env.BASE_URL || "/" })} aria-label="Log out" className="hidden rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white md:block"><LogOut className="h-5 w-5" /></button>
+            </div>
           </div>
         </header>
-        <div className="flex-1 p-6 md:p-8 overflow-y-auto pb-24 md:pb-8">
-          <div className="max-w-7xl mx-auto w-full">
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </div>
+
+        <div className="mx-auto max-w-6xl px-4 pb-28 pt-7 sm:px-6 md:px-10 md:pb-10">
+          <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-[#111322]/98 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden" aria-label="Primary">
+        <div className="mx-auto grid max-w-xl grid-cols-4">
+          {bottomLinks.map(({ href, label, icon: Icon }) => {
+            const active = href === "/" ? location === "/" : location.startsWith(href);
+            return <Link key={href} href={href} className={`flex flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium ${active ? "text-[#00d57e]" : "text-[#9998aa]"}`}><Icon className="h-6 w-6" strokeWidth={active ? 2.5 : 1.8} />{label}</Link>;
+          })}
+        </div>
+      </nav>
       <Toaster />
     </div>
   );
