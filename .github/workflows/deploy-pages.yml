@@ -24,6 +24,8 @@ jobs:
       # Clerk publishable keys are public by design; repo secret overrides it if set.
       VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_dXByaWdodC1mYWxjb24tMi5jbGVyay5hY2NvdW50cy5kZXYk' }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_APP_ID: Cp623UB2atBZci58ThtrZQ
+      VITE_OAUTH_PORTAL_URL: https://manus.im
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

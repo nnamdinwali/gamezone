@@ -6,7 +6,9 @@ const OAUTH_STATE_COOKIE = "__Host-oauth_state";
 
 export function startLogin() {
   const portal = import.meta.env.VITE_OAUTH_PORTAL_URL || "https://manus.im";
-  const appId = import.meta.env.VITE_APP_ID;
+  // Public OAuth client identifier for the hosted GameZone Manus project.
+  // Keep the fallback so GitHub Pages remains functional if the optional CI env is absent.
+  const appId = import.meta.env.VITE_APP_ID || "Cp623UB2atBZci58ThtrZQ";
   const apiBase = import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space";
   const redirectUri = `${apiBase}/api/oauth/callback`;
   const returnUri = `${window.location.origin}${import.meta.env.BASE_URL || "/"}`;
