@@ -100,9 +100,9 @@ function useAuthGate() {
 }
 
 function HomeRedirect() {
-  const { isLoaded, isSignedIn, error, timedOut, retry } = useAuthGate();
-  if (!isLoaded && !timedOut) return <AuthLoading retry={retry} />;
-  if (timedOut) return <AuthLoading error={error} retry={retry} />;
+  const { isSignedIn } = useManusAuth();
+  // The public landing page must not wait for authentication or an API cold start.
+  // Signed-in users are upgraded to the app shell as soon as their session is known.
   return isSignedIn ? <AppLayout><HomePage /></AppLayout> : <PublicLanding />;
 }
 
