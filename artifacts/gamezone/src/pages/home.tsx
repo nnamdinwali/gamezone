@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Crown } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { useMoney } from "@/lib/currency";
 import { 
   useGetUserStats, 
   getGetUserStatsQueryKey, 
@@ -15,6 +15,7 @@ import {
 import { useCurrentUser } from "@/lib/current-user";
 
 export function HomePage() {
+  const formatCurrency = useMoney();
   const { data: user, isLoading: isUserLoading } = useCurrentUser();
   const userId = user?.id;
 

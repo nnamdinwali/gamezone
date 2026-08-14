@@ -19,7 +19,10 @@ const uploadSchema = z.object({
   description: z.string().min(10, "Description needs more detail").max(500),
   genre: z.string().min(1, "Please select a genre"),
   thumbnailUrl: z.string().url("Must be a valid image URL").or(z.literal("")),
-  gameUrl: z.string().url("Must be a valid URL for the game iframe"),
+  gameUrl: z.string().url("Must be a valid URL for the game or landing page"),
+  androidStoreUrl: z.string().url("Must be a valid Google Play URL").or(z.literal("")),
+  iosStoreUrl: z.string().url("Must be a valid App Store URL").or(z.literal("")),
+  packageName: z.string().max(200).or(z.literal("")),
   creatorName: z.string().min(2, "Creator name required"),
   rewardPerMinute: z.coerce.number().min(1).max(100),
 });
@@ -38,6 +41,9 @@ export function UploadPage() {
       genre: "",
       thumbnailUrl: "",
       gameUrl: "",
+      androidStoreUrl: "",
+      iosStoreUrl: "",
+      packageName: "",
       creatorName: "",
       rewardPerMinute: 10,
     },
@@ -165,11 +171,54 @@ export function UploadPage() {
                   name="gameUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Embed URL</FormLabel>
+                      <FormLabel>Game / Landing URL</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com/embed/game" type="url" {...field} />
                       </FormControl>
-                      <FormDescription>The URL that will be loaded in the game iframe.</FormDescription>
+                      <FormDescription>Legacy game or landing URL. Add the store links below for APK offers.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="androidStoreUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Google Play Store URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://play.google.com/store/apps/details?id=..." type="url" {...field} />
+                      </FormControl>
+                      <FormDescription>Shown to Android users when they tap Play and Earn.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="iosStoreUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Apple App Store URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://apps.apple.com/app/..." type="url" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="packageName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Android Package Name (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="com.example.game" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

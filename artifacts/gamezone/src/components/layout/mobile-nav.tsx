@@ -3,11 +3,16 @@ import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import { Menu, X, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { navLinks } from "./nav-links";
+import { getNavLinks } from "./nav-links";
+import { useCurrentUser } from "@/lib/current-user";
+import { useIsAdmin } from "@/lib/is-admin";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
+  const { data: currentUser } = useCurrentUser();
+  const { isAdmin } = useIsAdmin();
+  const navLinks = getNavLinks({ profileId: currentUser?.id, isAdmin });
 
   useEffect(() => {
     setOpen(false);

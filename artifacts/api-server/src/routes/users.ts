@@ -110,6 +110,13 @@ router.get("/users/me", async (req, res) => {
       }).returning();
     }
 
+    if (user.bannedAt) {
+      return res.status(403).json({
+        error: "Account banned",
+        reason: user.banReason ?? "This account is unavailable.",
+      });
+    }
+
     return res.json(serializeUser(user));
   } catch (err) {
     req.log.error(err);
