@@ -44,7 +44,9 @@ td small { margin-top: 4px; color: #7e9a85; }
 .game-panel { margin-bottom: 24px; }
 .game-controls { display: flex; align-items: center; gap: 14px; padding: 18px 24px; border-bottom: 1px solid #183421; }
 .upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px 24px; border-bottom: 1px solid #183421; }
-.upload-grid input { min-width: 0; border: 1px solid #31563a; border-radius: 8px; padding: 10px 12px; color: #dff5e3; background: #0a1c10; }
+.upload-grid input, .upload-grid textarea { min-width: 0; border: 1px solid #31563a; border-radius: 8px; padding: 10px 12px; color: #dff5e3; background: #0a1c10; font: inherit; }
+.file-field { display: grid; gap: 6px; color: #9fb5a5; font-size: 12px; font-weight: 800; }
+.file-field input { padding: 7px 8px; font-size: 12px; }
 .upload-grid .refresh { border: 0; }
 .game-controls select, .milestone-form input { border: 1px solid #31563a; border-radius: 8px; padding: 10px 12px; color: #dff5e3; background: #0a1c10; }
 .game-controls span { color: #7e9a85; font-size: 13px; }

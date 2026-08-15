@@ -9,7 +9,7 @@ export async function adminFetch<T>(path: string, options: RequestInit = {}): Pr
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {}),
     },
   });
