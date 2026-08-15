@@ -10,7 +10,9 @@ type AdminSession = {
 };
 
 export function startAdminLogin() {
-  const returnUri = `${window.location.origin}${import.meta.env.BASE_URL || "/"}admin/`;
+  const basePath = import.meta.env.BASE_URL || "/";
+  const adminPath = basePath.endsWith("/admin/") ? basePath : `${basePath.replace(/\/$/, "")}/admin/`;
+  const returnUri = `${window.location.origin}${adminPath}`;
   const url = new URL(`${API_BASE}/api/auth/login`);
   url.searchParams.set("returnUri", returnUri);
   window.location.assign(url.toString());
