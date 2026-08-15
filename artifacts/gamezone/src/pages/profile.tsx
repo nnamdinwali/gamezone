@@ -57,6 +57,7 @@ const CURRENCY_CODES = [
 ];
 
 const COUNTRY_KEY = "gamezone:country-code";
+const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 
 export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
@@ -96,11 +97,13 @@ export function ProfilePage() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(COUNTRY_KEY);
-      if (saved) setCountryCode(saved);
+      const persisted = (user as typeof user & { countryCode?: string | null })?.countryCode;
+      if (persisted) setCountryCode(persisted);
+      else if (saved) setCountryCode(saved);
     } catch {
       // ignore
     }
-  }, []);
+  }, [user]);
 
   if (isCurrentUserLoading || isStatsLoading) {
     return (
@@ -129,16 +132,20 @@ export function ProfilePage() {
   const memberSince = format(new Date(user.createdAt), "M/d/yyyy");
   const avatarInitial = (displayName || user.username || "?").charAt(0).toUpperCase();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       localStorage.setItem(COUNTRY_KEY, countryCode);
-      if (preferredCurrency !== currency) {
-        setCurrency(preferredCurrency);
-      } else {
-        toast({ title: "Saved", description: "Your profile details have been updated." });
-      }
+      const response = await fetch(`${API_BASE}/api/users/me`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ countryCode }),
+      });
+      if (!response.ok) throw new Error("Country preference could not be saved");
+      if (preferredCurrency !== currency) setCurrency(preferredCurrency);
+      toast({ title: "Saved", description: "Your country and profile preferences have been updated." });
     } catch {
-      toast({ title: "Error", description: "Could not save preferences.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not save your country preference.", variant: "destructive" });
     }
   };
 

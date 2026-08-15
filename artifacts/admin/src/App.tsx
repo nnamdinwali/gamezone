@@ -11,6 +11,7 @@ type AdminUser = {
   username: string;
   email: string;
   avatarUrl: string;
+  countryCode: string | null;
   balance: number;
   totalEarnings: number;
   gamesPlayed: number;
@@ -179,7 +180,7 @@ export default function App() {
         </section>
         <section className="panel">
           <div className="panel-title"><div><p className="eyebrow">ACCOUNT MANAGEMENT</p><h2>Users</h2></div><span>{loading ? "Updating…" : `${users.length} records`}</span></div>
-          <div className="table-wrap"><table><thead><tr><th>User</th><th>Balance</th><th>Games played</th><th>Status</th><th>Action</th></tr></thead><tbody>{users.map((account) => <tr key={account.id}><td><strong>{account.username}</strong><small>{account.email}</small></td><td>${account.balance.toFixed(2)}</td><td>{account.gamesPlayed}</td><td><span className={account.bannedAt ? "status banned" : "status active"}>{account.bannedAt ? "Banned" : "Active"}</span></td><td>{account.bannedAt ? <button className="action unban" onClick={() => unbanUser(account.id)}>Unban</button> : <button className="action ban" onClick={() => banUser(account.id)}>Ban</button>}</td></tr>)}</tbody></table></div>
+          <div className="table-wrap"><table><thead><tr><th>User</th><th>Country</th><th>Balance</th><th>Games played</th><th>Status</th><th>Action</th></tr></thead><tbody>{users.map((account) => <tr key={account.id}><td><strong>{account.username}</strong><small>{account.email}</small></td><td><strong>{account.countryCode ?? "Not set"}</strong><small>{account.countryCode ? "Profile country" : "Awaiting player preference"}</small></td><td>${account.balance.toFixed(2)}</td><td>{account.gamesPlayed}</td><td><span className={account.bannedAt ? "status banned" : "status active"}>{account.bannedAt ? "Banned" : "Active"}</span></td><td>{account.bannedAt ? <button className="action unban" onClick={() => unbanUser(account.id)}>Unban</button> : <button className="action ban" onClick={() => banUser(account.id)}>Ban</button>}</td></tr>)}</tbody></table></div>
         </section>
         <section className="panel">
           <div className="panel-title"><div><p className="eyebrow">USER COMMUNICATION</p><h2>Message a user</h2></div><span>Delivered to the player bell</span></div>
