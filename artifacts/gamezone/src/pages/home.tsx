@@ -139,7 +139,22 @@ export function HomePage() {
 }
 
 function OfferCard({ game, featured = false, formatCurrency, disabled = false }: { game: any; featured?: boolean; formatCurrency: (value: number) => string; disabled?: boolean }) {
-  const reward = Number(game.rewardPerMinute ?? 0);
+  const [milestoneTotal, setMilestoneTotal] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/api/games/${game.id}/milestones`, { credentials: "include", cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return [];
+        const payload = await response.json();
+        return Array.isArray(payload) ? payload : Array.isArray(payload?.milestones) ? payload.milestones : [];
+      })
+      .then((items) => {
+        if (!cancelled) setMilestoneTotal(items.filter((item: any) => item?.isActive !== false).reduce((sum: number, item: any) => sum + Math.max(0, Number(item?.rewardAmount) || 0), 0));
+      })
+      .catch(() => { if (!cancelled) setMilestoneTotal(0); });
+    return () => { cancelled = true; };
+  }, [game.id]);
+  const reward = milestoneTotal;
   const content = (
     <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
       <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
