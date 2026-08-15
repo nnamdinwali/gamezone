@@ -69,6 +69,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
+        <nav className="hidden border-b border-white/5 bg-[#111322]/80 px-4 py-2 backdrop-blur-xl md:block" aria-label="Primary desktop navigation">
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 sm:gap-4 md:px-6">
+            {bottomLinks.map(({ href, label, icon: Icon }) => {
+              const active = href === "/" ? location === "/" : location.startsWith(href);
+              return (
+                <Link
+                  key={`desktop-${href}`}
+                  href={href}
+                  className={`flex min-w-28 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${active ? "bg-[#00d57e]/10 text-[#00d57e]" : "text-[#9998aa] hover:bg-white/5 hover:text-white"}`}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
         <div className="mx-auto max-w-6xl px-4 pb-28 pt-7 sm:px-6 md:px-10 md:pb-10">
           <ErrorBoundary>{children}</ErrorBoundary>
         </div>
