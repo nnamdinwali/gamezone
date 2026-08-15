@@ -87,6 +87,7 @@ export function ProfilePage() {
   const [preferredCurrency, setPreferredCurrency] = useState(currency);
   const [payoutMethods, setPayoutMethods] = useState<string[]>([]);
   const [payoutProfiles, setPayoutProfiles] = useState<Array<{ id: number; method: string; label: string }>>([]);
+  const [editingProfileId, setEditingProfileId] = useState<number | null>(null);
   const [payoutMethod, setPayoutMethod] = useState("paypal");
   const [payoutDetails, setPayoutDetails] = useState({ accountName: "", email: "", bankName: "", accountNumber: "", iban: "", accountIdentifier: "", phone: "" });
 
@@ -141,14 +142,25 @@ export function ProfilePage() {
   const memberSince = format(new Date(user.createdAt), "M/d/yyyy");
   const avatarInitial = (displayName || user.username || "?").charAt(0).toUpperCase();
 
+  const emptyPayoutDetails = { accountName: "", email: "", bankName: "", accountNumber: "", iban: "", accountIdentifier: "", phone: "" };
+  const selectedMethodAlreadySaved = payoutProfiles.some((profile) => profile.method === payoutMethod && profile.id !== editingProfileId);
+  const handleEditPayout = (profile: { id: number; method: string; label: string }) => {
+    setEditingProfileId(profile.id);
+    setPayoutMethod(profile.method);
+    setPayoutDetails(emptyPayoutDetails);
+    toast({ title: `Edit ${profile.method === "bank_transfer" ? "bank transfer" : profile.method}`, description: "Enter the complete replacement details, then save." });
+  };
+  const handleCancelEditPayout = () => { setEditingProfileId(null); setPayoutDetails(emptyPayoutDetails); };
   const handleSavePayout = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/payout-methods`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ countryCode, method: payoutMethod, details: payoutDetails }) });
+      const endpoint = editingProfileId ? `${API_BASE}/api/payout-methods/${editingProfileId}` : `${API_BASE}/api/payout-methods`;
+      const response = await fetch(endpoint, { method: editingProfileId ? "PATCH" : "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ countryCode, method: payoutMethod, details: payoutDetails }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not save payout method");
-      setPayoutProfiles((current) => [data, ...current]);
-      setPayoutDetails({ accountName: "", email: "", bankName: "", accountNumber: "", iban: "", accountIdentifier: "", phone: "" });
-      toast({ title: "Payout method saved", description: "You can now select it when requesting a withdrawal." });
+      setPayoutProfiles((current) => editingProfileId ? current.map((profile) => profile.id === editingProfileId ? data : profile) : [data, ...current]);
+      setEditingProfileId(null);
+      setPayoutDetails(emptyPayoutDetails);
+      toast({ title: editingProfileId ? "Payout method updated" : "Payout method saved", description: "This method is now available for manual withdrawal requests." });
     } catch (error) { toast({ title: "Payout method not saved", description: error instanceof Error ? error.message : "Please check the details.", variant: "destructive" }); }
   };
 
@@ -293,11 +305,12 @@ export function ProfilePage() {
           </Button>
           <div className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
             <div><h3 className="text-lg font-bold font-heading">Payout methods</h3><p className="text-sm text-muted-foreground">Available for {countryCode}: {payoutMethods.join(", ") || "PayPal"}. No payment is sent automatically.</p></div>
-            {payoutProfiles.length > 0 && <div className="space-y-2">{payoutProfiles.map((profile) => <div key={profile.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm"><span>{profile.label}</span><span className="text-xs text-muted-foreground">Saved</span></div>)}</div>}
-            <select value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value)} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm">{payoutMethods.map((method) => <option key={method} value={method}>{method === "bank_transfer" ? "Direct bank transfer" : method === "paypal" ? "PayPal" : method === "opay" ? "Opay" : "PalmPay"}</option>)}</select>
+            {payoutProfiles.length > 0 && <div className="space-y-2">{payoutProfiles.map((profile) => <div key={profile.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 text-sm"><span className="min-w-0 truncate">{profile.label}</span><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Saved</span><Button type="button" variant="outline" size="sm" onClick={() => handleEditPayout(profile)}>Edit</Button></div></div>)}</div>}
+            <select value={payoutMethod} onChange={(event) => { setPayoutMethod(event.target.value); setEditingProfileId(null); }} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm">{payoutMethods.map((method) => <option key={method} value={method}>{method === "bank_transfer" ? "Direct bank transfer" : method === "paypal" ? "PayPal" : method === "opay" ? "Opay" : "PalmPay"}</option>)}</select>
+            {selectedMethodAlreadySaved && <p className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-200">A {payoutMethod === "bank_transfer" ? "bank transfer" : payoutMethod} account is already saved. Choose another method or press Edit above to change it.</p>}
             <Input placeholder="Account holder name" value={payoutDetails.accountName} onChange={(event) => setPayoutDetails({ ...payoutDetails, accountName: event.target.value })} />
             {payoutMethod === "paypal" ? <Input type="email" placeholder="PayPal email" value={payoutDetails.email} onChange={(event) => setPayoutDetails({ ...payoutDetails, email: event.target.value })} /> : payoutMethod === "bank_transfer" ? <div className="grid gap-3 sm:grid-cols-2"><Input placeholder="Bank name" value={payoutDetails.bankName} onChange={(event) => setPayoutDetails({ ...payoutDetails, bankName: event.target.value })} /><Input placeholder="Account number or IBAN" value={payoutDetails.accountNumber || payoutDetails.iban} onChange={(event) => setPayoutDetails({ ...payoutDetails, accountNumber: event.target.value, iban: event.target.value })} /></div> : <Input placeholder={`${payoutMethod === "opay" ? "Opay" : "PalmPay"} phone or account ID`} value={payoutDetails.accountIdentifier} onChange={(event) => setPayoutDetails({ ...payoutDetails, accountIdentifier: event.target.value, phone: event.target.value })} />}
-            <Button type="button" onClick={() => void handleSavePayout()} className="w-full">Save payout method</Button>
+            <div className="flex gap-2"><Button type="button" disabled={selectedMethodAlreadySaved} onClick={() => void handleSavePayout()} className="flex-1">{editingProfileId ? "Update payout method" : "Save payout method"}</Button>{editingProfileId && <Button type="button" variant="outline" onClick={handleCancelEditPayout}>Cancel</Button>}</div>
           </div>
 
           <Button
