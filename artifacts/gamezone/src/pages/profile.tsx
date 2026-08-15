@@ -90,6 +90,9 @@ export function ProfilePage() {
   const [editingProfileId, setEditingProfileId] = useState<number | null>(null);
   const [payoutMethod, setPayoutMethod] = useState("paypal");
   const [payoutDetails, setPayoutDetails] = useState({ accountName: "", email: "", bankName: "", accountNumber: "", iban: "", accountIdentifier: "", phone: "" });
+  const [supportSubject, setSupportSubject] = useState("");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportStatus, setSupportStatus] = useState("");
 
   useEffect(() => {
     if (user?.username) setDisplayName(user.username);
@@ -162,6 +165,17 @@ export function ProfilePage() {
       setPayoutDetails(emptyPayoutDetails);
       toast({ title: editingProfileId ? "Payout method updated" : "Payout method saved", description: "This method is now available for manual withdrawal requests." });
     } catch (error) { toast({ title: "Payout method not saved", description: error instanceof Error ? error.message : "Please check the details.", variant: "destructive" }); }
+  };
+
+  const handleSendSupport = async () => {
+    if (!supportSubject.trim() || !supportMessage.trim()) { setSupportStatus("Add a subject and message first."); return; }
+    setSupportStatus("Sending…");
+    try {
+      const response = await fetch(`${API_BASE}/api/support/messages`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject: supportSubject.trim(), message: supportMessage.trim() }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to send support message");
+      setSupportSubject(""); setSupportMessage(""); setSupportStatus("Message sent to GameZone support.");
+    } catch (error) { setSupportStatus(error instanceof Error ? error.message : "Unable to send support message"); }
   };
 
   const handleSave = async () => {
@@ -311,6 +325,14 @@ export function ProfilePage() {
             <Input placeholder="Account holder name" value={payoutDetails.accountName} onChange={(event) => setPayoutDetails({ ...payoutDetails, accountName: event.target.value })} />
             {payoutMethod === "paypal" ? <Input type="email" placeholder="PayPal email" value={payoutDetails.email} onChange={(event) => setPayoutDetails({ ...payoutDetails, email: event.target.value })} /> : payoutMethod === "bank_transfer" ? <div className="grid gap-3 sm:grid-cols-2"><Input placeholder="Bank name" value={payoutDetails.bankName} onChange={(event) => setPayoutDetails({ ...payoutDetails, bankName: event.target.value })} /><Input placeholder="Account number or IBAN" value={payoutDetails.accountNumber || payoutDetails.iban} onChange={(event) => setPayoutDetails({ ...payoutDetails, accountNumber: event.target.value, iban: event.target.value })} /></div> : <Input placeholder={`${payoutMethod === "opay" ? "Opay" : "PalmPay"} phone or account ID`} value={payoutDetails.accountIdentifier} onChange={(event) => setPayoutDetails({ ...payoutDetails, accountIdentifier: event.target.value, phone: event.target.value })} />}
             <div className="flex gap-2"><Button type="button" disabled={selectedMethodAlreadySaved} onClick={() => void handleSavePayout()} className="flex-1">{editingProfileId ? "Update payout method" : "Save payout method"}</Button>{editingProfileId && <Button type="button" variant="outline" onClick={handleCancelEditPayout}>Cancel</Button>}</div>
+          </div>
+
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
+            <div><h3 className="text-lg font-bold font-heading">Contact support</h3><p className="text-sm text-muted-foreground">Send a message to the GameZone owner. Replies will appear in your notification bell.</p></div>
+            <Input placeholder="Subject" value={supportSubject} onChange={(event) => setSupportSubject(event.target.value)} />
+            <textarea className="min-h-28 w-full rounded-md border border-border bg-input px-3 py-3 text-sm" placeholder="Tell us what you need help with" value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} />
+            <Button type="button" onClick={() => void handleSendSupport()} className="w-full h-12 rounded-xl font-bold">Send to support</Button>
+            {supportStatus && <p className="text-sm text-muted-foreground">{supportStatus}</p>}
           </div>
 
           <Button

@@ -6,7 +6,8 @@ import { adminFetch } from "./main";
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
 type AdminGame = { id: number; title: string; genre: string; gameUrl: string; androidStoreUrl: string | null; iosStoreUrl: string | null; packageName: string | null; playCount: number };
 type Milestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean };
-type Withdrawal = { id: number; userId: number; amount: number; currencyCode: string; status: string; reviewNote: string | null; createdAt: string; user: { username: string; email: string; countryCode: string | null }; payoutProfile: { method: string; label: string; maskedDetails: string } };
+type Withdrawal = { id: number; userId: number; amount: number; currencyCode: string; status: string; reviewNote: string | null; createdAt: string; user: { username: string; email: string; countryCode: string | null }; payoutProfile: { method: string; label: string; maskedDetails: string; details: Record<string, string> } };
+type SupportMessage = { id: number; userId: number; subject: string; message: string; status: string; createdAt: string; readAt: string | null; user?: { username: string; email: string; countryCode: string | null } };
 type AdminUser = {
   id: number;
   username: string;
@@ -48,21 +49,24 @@ export default function App() {
   const [messageBody, setMessageBody] = useState("");
   const [messageStatus, setMessageStatus] = useState("");
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [nextOverview, nextUsers, nextGames, nextWithdrawals] = await Promise.all([
+      const [nextOverview, nextUsers, nextGames, nextWithdrawals, nextSupport] = await Promise.all([
         adminFetch<Overview>("/api/admin/overview"),
         adminFetch<AdminUser[]>("/api/admin/users"),
         adminFetch<AdminGame[]>("/api/games"),
         adminFetch<Withdrawal[]>("/api/admin/withdrawals"),
+        adminFetch<{ messages: SupportMessage[] }>("/api/admin/support/messages"),
       ]);
       setOverview(nextOverview);
       setUsers(nextUsers);
       setGames(nextGames);
       setWithdrawals(nextWithdrawals);
+      setSupportMessages(nextSupport.messages);
       setSelectedGameId((current) => current ?? nextGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
@@ -159,6 +163,11 @@ export default function App() {
     } catch (err) { setError(err instanceof Error ? err.message : "Unable to update withdrawal"); }
   };
 
+  const markSupportRead = async (id: number) => {
+    try { await adminFetch(`/api/admin/support/messages/${id}/read`, { method: "PATCH" }); setSupportMessages((current) => current.map((message) => message.id === id ? { ...message, status: "read", readAt: new Date().toISOString() } : message)); }
+    catch (err) { setError(err instanceof Error ? err.message : "Unable to update support message"); }
+  };
+
   const unbanUser = async (id: number) => {
     try {
       await adminFetch(`/api/admin/users/${id}/unban`, { method: "PATCH" });
@@ -194,7 +203,7 @@ export default function App() {
           <div className="panel-title"><div><p className="eyebrow">ACCOUNT MANAGEMENT</p><h2>Users</h2></div><span>{loading ? "Updating…" : `${users.length} records`}</span></div>
           <div className="table-wrap"><table><thead><tr><th>User</th><th>Country</th><th>Balance</th><th>Games played</th><th>Status</th><th>Action</th></tr></thead><tbody>{users.map((account) => <tr key={account.id}><td><strong>{account.username}</strong><small>{account.email}</small></td><td><strong>{account.countryCode ?? "Not set"}</strong><small>{account.countryCode ? "Profile country" : "Awaiting player preference"}</small></td><td>${account.balance.toFixed(2)}</td><td>{account.gamesPlayed}</td><td><span className={account.bannedAt ? "status banned" : "status active"}>{account.bannedAt ? "Banned" : "Active"}</span></td><td>{account.bannedAt ? <button className="action unban" onClick={() => unbanUser(account.id)}>Unban</button> : <button className="action ban" onClick={() => banUser(account.id)}>Ban</button>}</td></tr>)}</tbody></table></div>
         </section>
-        <section className="panel">
+        <section id="user-communication" className="panel">
           <div className="panel-title"><div><p className="eyebrow">USER COMMUNICATION</p><h2>Message a user</h2></div><span>Delivered to the player bell</span></div>
           <div className="upload-grid">
             <select value={messageUserId} onChange={(event) => setMessageUserId(event.target.value)}><option value="">Select a user</option>{users.map((account) => <option key={account.id} value={account.id}>{account.username} · {account.email}</option>)}</select>
@@ -204,8 +213,9 @@ export default function App() {
           </div>
           {messageStatus && <div className={messageStatus.startsWith("Message sent") ? "success" : "error"}>{messageStatus}</div>}
         </section>
+        <section id="support-inbox" className="panel"><div className="panel-title"><div><p className="eyebrow">PLAYER SUPPORT</p><h2>Support inbox</h2></div><span>{supportMessages.filter((message) => message.status === "open").length} open</span></div><p className="helper">Players send messages from their profile. Read them here, then reply using the existing Message a user notification form above.</p><div className="withdrawal-list">{supportMessages.length ? supportMessages.map((message) => <article className="withdrawal-card" key={message.id}><div><strong>{message.subject}</strong><small>{message.user?.username || "Player"} · {message.user?.email || ""} · {new Date(message.createdAt).toLocaleString()}</small><p>{message.message}</p><small>Status: {message.status}</small></div><div className="withdrawal-actions">{message.status === "open" && <button className="refresh" onClick={() => void markSupportRead(message.id)}>Mark read</button>}{message.status !== "closed" && <button className="action" onClick={() => { setMessageUserId(String(message.userId)); setMessageTitle(`Re: ${message.subject}`); document.getElementById("user-communication")?.scrollIntoView({ behavior: "smooth" }); }}>Reply above</button>}</div></article>) : <p className="empty">No player support messages yet.</p>}</div></section>
         <section className="next"><h2>Admin modules</h2><div><a className="module-link" href="#offer-management">Game uploads and store links</a><a className="module-link" href="#reward-management">Milestone reward schedules</a><a className="module-link" href="#wallet-review">Wallet and payout review</a><a className="module-link module-placeholder-link" href="#audit-log">Audit log <small>Coming soon</small></a></div></section>
-        <section id="wallet-review" className="panel"><div className="panel-title"><div><p className="eyebrow">WALLET AND PAYOUT REVIEW</p><h2>Manual withdrawal queue</h2></div><span>{withdrawals.length} requests</span></div><p className="helper">Review each request, manually send the payout outside GameZone, then mark it paid. GameZone never sends funds automatically.</p><div className="withdrawal-list">{withdrawals.length ? withdrawals.map((item) => <article className="withdrawal-card" key={item.id}><div><strong>{item.user.username}</strong><small>{item.user.email} · {item.user.countryCode || "Country not set"}</small><p>{item.currencyCode} {Number(item.amount).toFixed(2)} · {item.payoutProfile.method} · {item.payoutProfile.maskedDetails}</p><small>{new Date(item.createdAt).toLocaleString()} · {item.status}</small></div><div className="withdrawal-actions">{item.status === "pending" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "approved")}>Approve</button>}{item.status === "approved" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "paid")}>Mark paid</button>}{["pending", "approved"].includes(item.status) && <><button className="action" onClick={() => void updateWithdrawalStatus(item.id, "needs_correction")}>Needs correction</button><button className="action ban" onClick={() => void updateWithdrawalStatus(item.id, "rejected")}>Reject</button></>}</div></article>) : <p className="empty">No withdrawal requests yet.</p>}</div></section>
+        <section id="wallet-review" className="panel"><div className="panel-title"><div><p className="eyebrow">WALLET AND PAYOUT REVIEW</p><h2>Manual withdrawal queue</h2></div><span>{withdrawals.length} requests</span></div><p className="helper">Review each request, manually send the payout outside GameZone, then mark it paid. GameZone never sends funds automatically.</p><div className="withdrawal-list">{withdrawals.length ? withdrawals.map((item) => <article className="withdrawal-card" key={item.id}><div><strong>{item.user.username}</strong><small>{item.user.email} · {item.user.countryCode || "Country not set"}</small><p><strong>{item.currencyCode} {Number(item.amount).toFixed(2)}</strong> · {item.payoutProfile.method} · {item.payoutProfile.maskedDetails}</p><div className="payout-details"><small>Account details for manual payout:</small>{Object.entries(item.payoutProfile.details || {}).filter(([, value]) => value).map(([key, value]) => <span key={key}><b>{key.replace(/([A-Z])/g, " $1")}: </b>{value}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()} · {item.status}</small></div><div className="withdrawal-actions">{item.status === "pending" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "approved")}>Approve</button>}{item.status === "approved" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "paid")}>Mark paid</button>}{["pending", "approved"].includes(item.status) && <><button className="action" onClick={() => void updateWithdrawalStatus(item.id, "needs_correction")}>Needs correction</button><button className="action ban" onClick={() => void updateWithdrawalStatus(item.id, "rejected")}>Reject</button></>}</div></article>) : <p className="empty">No withdrawal requests yet.</p>}</div></section>
         <section id="audit-log" className="panel module-placeholder"><p className="eyebrow">AUDIT LOG</p><h2>Audit log module</h2><p>This admin destination is reserved for immutable activity history. It is not active yet.</p></section>
       </main>
     </div>
