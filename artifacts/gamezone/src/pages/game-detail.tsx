@@ -4,8 +4,7 @@ import { useGetGame, getGetGameQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, Coins, Users, Star, ArrowLeft, Calendar, User, Circle, CheckCircle2 } from "lucide-react";
-import { format } from "date-fns";
+import { Play, Coins, ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
 import { resolveGameImageUrl } from "@/lib/media";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
@@ -147,32 +146,6 @@ export function GameDetailPage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-card border border-border flex flex-col items-center text-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              <div className="font-mono font-bold text-lg">{game.playCount.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">Total Plays</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-card border border-border flex flex-col items-center text-center gap-2">
-              <Star className="w-5 h-5 text-secondary" />
-              <div className="font-mono font-bold text-lg">{game.rating.toFixed(1)}/5</div>
-              <p className="text-xs text-muted-foreground uppercase font-bold">User Rating</p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-card border border-border space-y-4">
-            <h3 className="font-heading font-bold uppercase text-sm text-muted-foreground tracking-wider mb-4 border-b border-border pb-2">Game Details</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted-foreground"><User className="w-4 h-4" /> Creator</span>
-                <span className="font-bold">{game.creatorName}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted-foreground"><Calendar className="w-4 h-4" /> Added</span>
-                <span className="font-mono">{format(new Date(game.createdAt), "MMM d, yyyy")}</span>
-              </div>
-            </div>
-          </div>
 
           <div className="p-6 rounded-2xl bg-card border border-border space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
