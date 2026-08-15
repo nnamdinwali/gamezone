@@ -29,13 +29,13 @@ export function HomePage() {
   const gamesPlayed = stats?.gamesPlayed ?? user?.gamesPlayed ?? 0;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8 pb-8">
+    <div className="mx-auto w-full max-w-3xl space-y-8 pb-8 md:max-w-5xl md:space-y-10">
       <section className="space-y-5">
-        <div className="flex items-center justify-center gap-3">
-          <div className="flex min-w-[132px] items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)]">
+        <div className="flex items-center justify-center gap-3 md:gap-5">
+          <div className="flex min-w-[132px] items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)] md:min-w-[220px] md:px-7 md:py-4 md:text-3xl">
             <span>{isUserLoading ? "—" : formatCurrency(balance)}</span>
           </div>
-          <div className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white">
+          <div className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white md:min-w-[200px] md:px-7 md:py-4 md:text-3xl">
             <Ticket className="h-5 w-5 text-[#b6b4df]" />
             <span>0</span>
           </div>
@@ -43,9 +43,9 @@ export function HomePage() {
       </section>
 
       <section className="space-y-3">
-        <div className="text-center text-xl font-medium text-white">Next cashout</div>
-        <p className="text-center text-sm text-[#aaa9bb]">{balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
-        <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5">
+        <div className="text-center text-xl font-medium text-white md:text-3xl">Next cashout</div>
+        <p className="text-center text-sm text-[#aaa9bb] md:text-base">{balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
+        <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5 md:h-12">
           <div className="flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] px-5 text-sm font-semibold text-white transition-all duration-700" style={{ width: `${cashoutProgress}%` }}>
             <span className={cashoutProgress === 0 ? "sr-only" : ""}>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
           </div>
@@ -55,7 +55,7 @@ export function HomePage() {
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <Trophy className="h-8 w-8 text-[#ffe21a]" fill="currentColor" strokeWidth={1.5} />
-          <h1 className="text-3xl font-bold tracking-tight text-white">Best for You</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Best for You</h1>
         </div>
 
         {featured ? (
@@ -71,17 +71,17 @@ export function HomePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Gift className="h-8 w-8 text-[#ffe21a]" fill="currentColor" strokeWidth={1.5} />
-            <h2 className="text-3xl font-bold tracking-tight text-white">More Offers</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">More Offers</h2>
           </div>
           <Link href="/games" className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#00d57e]">View all <ChevronRight className="h-5 w-5" /></Link>
         </div>
 
         {offers.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
             {offers.map((game) => <OfferCard key={game.id} game={game} formatCurrency={formatCurrency} />)}
           </div>
         ) : (
-          <Link href="/games" className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-[#171827] px-5 py-10 text-[#aaa9bb] hover:text-white"><Search className="h-5 w-5" /> Browse all games</Link>
+          <Link href="/games" className="flex min-h-40 items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-[#171827] px-5 py-10 text-[#aaa9bb] hover:text-white md:min-h-52 md:text-lg"><Search className="h-5 w-5" /> Browse all games</Link>
         )}
       </section>
 
