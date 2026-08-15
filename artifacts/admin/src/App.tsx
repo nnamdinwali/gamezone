@@ -64,11 +64,15 @@ export default function App() {
         adminFetch<{ messages: SupportMessage[] }>("/api/admin/support/messages"),
       ]);
       setOverview(nextOverview);
-      setUsers(nextUsers);
-      setGames(nextGames);
-      setWithdrawals(nextWithdrawals);
-      setSupportMessages(nextSupport.messages);
-      setSelectedGameId((current) => current ?? nextGames[0]?.id ?? null);
+      const safeUsers = Array.isArray(nextUsers) ? nextUsers : [];
+      const safeGames = Array.isArray(nextGames) ? nextGames : [];
+      const safeWithdrawals = Array.isArray(nextWithdrawals) ? nextWithdrawals : [];
+      const safeSupportMessages = Array.isArray(nextSupport?.messages) ? nextSupport.messages : [];
+      setUsers(safeUsers);
+      setGames(safeGames);
+      setWithdrawals(safeWithdrawals);
+      setSupportMessages(safeSupportMessages);
+      setSelectedGameId((current) => current ?? safeGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
     } finally {
@@ -82,9 +86,15 @@ export default function App() {
 
   useEffect(() => {
     if (!selectedGameId || !isSignedIn) return;
-    adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`)
-      .then(setMilestones)
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load milestones"));
+    adminFetch<Milestone[] | { milestones?: Milestone[] } | null>(`/api/admin/games/${selectedGameId}/milestones`)
+      .then((payload) => {
+        const nextMilestones = Array.isArray(payload) ? payload : payload && Array.isArray(payload.milestones) ? payload.milestones : [];
+        setMilestones(nextMilestones);
+      })
+      .catch((err) => {
+        setMilestones([]);
+        setError(err instanceof Error ? err.message : "Unable to load milestones");
+      });
   }, [isSignedIn, selectedGameId]);
 
   if (!isLoaded) return <div className="loading">Loading admin session…</div>;
