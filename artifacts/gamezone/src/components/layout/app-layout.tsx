@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useManusAuth } from "@/lib/manus-auth";
 import { Link, useLocation } from "wouter";
 import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
-import { Sidebar } from "./sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
 import { useNotifications } from "@/lib/notifications";
@@ -29,8 +28,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#10111f] text-white">
-      <Sidebar />
-      <main className="relative min-h-screen min-w-0 md:ml-64">
+      <main className="relative min-h-screen min-w-0">
         <header className="sticky top-0 z-40 border-b border-white/5 bg-[#10111f]/95 px-4 py-4 backdrop-blur-xl sm:px-6 md:px-10">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
             <Link href={profileHref} className="flex items-center gap-3 rounded-2xl" data-testid="link-session-profile">
