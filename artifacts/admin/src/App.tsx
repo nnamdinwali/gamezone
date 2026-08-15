@@ -4,8 +4,9 @@ import { Activity, Ban, Gamepad2, LogOut, ShieldCheck, Users } from "lucide-reac
 import { adminFetch } from "./main";
 
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
-type AdminGame = { id: number; title: string; genre: string; androidStoreUrl: string | null; iosStoreUrl: string | null; playCount: number };
+type AdminGame = { id: number; title: string; genre: string; gameUrl: string; androidStoreUrl: string | null; iosStoreUrl: string | null; packageName: string | null; playCount: number };
 type Milestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean };
+type Withdrawal = { id: number; userId: number; amount: number; currencyCode: string; status: string; reviewNote: string | null; createdAt: string; user: { username: string; email: string; countryCode: string | null }; payoutProfile: { method: string; label: string; maskedDetails: string } };
 type AdminUser = {
   id: number;
   username: string;
@@ -39,26 +40,29 @@ export default function App() {
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [milestoneForm, setMilestoneForm] = useState({ level: "10", title: "Reach level 10", rewardAmount: "0.10", currency: "USD", countryCode: "US" });
-  const [gameForm, setGameForm] = useState({ title: "", description: "", genre: "Arcade", thumbnailUrl: "", gameUrl: "https://example.com", androidStoreUrl: "", iosStoreUrl: "", packageName: "", creatorName: "GameZone Studio", rewardPerMinute: "0" });
+  const [gameForm, setGameForm] = useState({ title: "", description: "", genre: "Arcade", thumbnailUrl: "", gameUrl: "", androidStoreUrl: "", iosStoreUrl: "", packageName: "", creatorName: "GameZone Studio", rewardPerMinute: "0.05" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [messageUserId, setMessageUserId] = useState("");
   const [messageTitle, setMessageTitle] = useState("");
   const [messageBody, setMessageBody] = useState("");
   const [messageStatus, setMessageStatus] = useState("");
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [nextOverview, nextUsers, nextGames] = await Promise.all([
+      const [nextOverview, nextUsers, nextGames, nextWithdrawals] = await Promise.all([
         adminFetch<Overview>("/api/admin/overview"),
         adminFetch<AdminUser[]>("/api/admin/users"),
         adminFetch<AdminGame[]>("/api/games"),
+        adminFetch<Withdrawal[]>("/api/admin/withdrawals"),
       ]);
       setOverview(nextOverview);
       setUsers(nextUsers);
       setGames(nextGames);
+      setWithdrawals(nextWithdrawals);
       setSelectedGameId((current) => current ?? nextGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
@@ -147,6 +151,14 @@ export default function App() {
     }
   };
 
+  const updateWithdrawalStatus = async (id: number, status: string) => {
+    const note = status === "needs_correction" || status === "rejected" ? window.prompt("Optional note for the player:", "") ?? "" : "";
+    try {
+      await adminFetch(`/api/admin/withdrawals/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, note }) });
+      await loadAdminData();
+    } catch (err) { setError(err instanceof Error ? err.message : "Unable to update withdrawal"); }
+  };
+
   const unbanUser = async (id: number) => {
     try {
       await adminFetch(`/api/admin/users/${id}/unban`, { method: "PATCH" });
@@ -173,7 +185,7 @@ export default function App() {
         </section>
         <section id="offer-management" className="panel game-panel">
           <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Upload a game offer</h2></div><span>Store-link APK flow</span></div>
-          <div className="upload-grid"><input placeholder="Game title" value={gameForm.title} onChange={(e) => setGameForm({ ...gameForm, title: e.target.value })} /><input placeholder="Creator / studio" value={gameForm.creatorName} onChange={(e) => setGameForm({ ...gameForm, creatorName: e.target.value })} /><input placeholder="Genre" value={gameForm.genre} onChange={(e) => setGameForm({ ...gameForm, genre: e.target.value })} /><input placeholder="Thumbnail URL" value={gameForm.thumbnailUrl} onChange={(e) => setGameForm({ ...gameForm, thumbnailUrl: e.target.value })} /><input placeholder="Google Play URL" value={gameForm.androidStoreUrl} onChange={(e) => setGameForm({ ...gameForm, androidStoreUrl: e.target.value })} /><input placeholder="App Store URL" value={gameForm.iosStoreUrl} onChange={(e) => setGameForm({ ...gameForm, iosStoreUrl: e.target.value })} /><input placeholder="Android package name" value={gameForm.packageName} onChange={(e) => setGameForm({ ...gameForm, packageName: e.target.value })} /><input placeholder="Description" value={gameForm.description} onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })} /><button className="refresh" onClick={createGame}>Create game offer</button></div>
+          <div className="upload-grid"><input placeholder="Game title" value={gameForm.title} onChange={(e) => setGameForm({ ...gameForm, title: e.target.value })} /><input placeholder="Creator / studio" value={gameForm.creatorName} onChange={(e) => setGameForm({ ...gameForm, creatorName: e.target.value })} /><input placeholder="Genre" value={gameForm.genre} onChange={(e) => setGameForm({ ...gameForm, genre: e.target.value })} /><input placeholder="Thumbnail URL (direct image)" type="url" value={gameForm.thumbnailUrl} onChange={(e) => setGameForm({ ...gameForm, thumbnailUrl: e.target.value })} /><input placeholder="Playable Game URL" type="url" value={gameForm.gameUrl} onChange={(e) => setGameForm({ ...gameForm, gameUrl: e.target.value })} /><input placeholder="Google Play URL" type="url" value={gameForm.androidStoreUrl} onChange={(e) => setGameForm({ ...gameForm, androidStoreUrl: e.target.value })} /><input placeholder="App Store URL" type="url" value={gameForm.iosStoreUrl} onChange={(e) => setGameForm({ ...gameForm, iosStoreUrl: e.target.value })} /><input placeholder="Android package name" value={gameForm.packageName} onChange={(e) => setGameForm({ ...gameForm, packageName: e.target.value })} /><input placeholder="Reward per minute" type="number" min="0" step="0.01" value={gameForm.rewardPerMinute} onChange={(e) => setGameForm({ ...gameForm, rewardPerMinute: e.target.value })} /><input placeholder="Description" value={gameForm.description} onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })} /><button className="refresh" onClick={createGame}>Create game offer</button></div>
           <div id="reward-management" className="panel-title"><div><p className="eyebrow">REWARD MANAGEMENT</p><h2>Games and milestones</h2></div><span>{games.length} games</span></div>
           <div className="game-controls"><select value={selectedGameId ?? ""} onChange={(event) => setSelectedGameId(Number(event.target.value))}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select><span>{selectedGameId ? "Configure reward schedule" : "Choose a game to manage milestones"}</span></div>
           {selectedGameId && <><div className="milestone-form"><input type="number" min="1" value={milestoneForm.level} onChange={(event) => setMilestoneForm({ ...milestoneForm, level: event.target.value })} placeholder="Level" /><input value={milestoneForm.title} onChange={(event) => setMilestoneForm({ ...milestoneForm, title: event.target.value })} placeholder="Milestone title" /><input type="number" min="0" step="0.01" value={milestoneForm.rewardAmount} onChange={(event) => setMilestoneForm({ ...milestoneForm, rewardAmount: event.target.value })} placeholder="Reward" /><input value={milestoneForm.currency} onChange={(event) => setMilestoneForm({ ...milestoneForm, currency: event.target.value.toUpperCase() })} placeholder="Currency" /><input value={milestoneForm.countryCode} onChange={(event) => setMilestoneForm({ ...milestoneForm, countryCode: event.target.value.toUpperCase() })} placeholder="Country" /><button className="refresh" onClick={createMilestone}>Add milestone</button></div><div className="milestone-list">{milestones.map((milestone) => <div className="milestone" key={milestone.id}><strong>Level {milestone.level}</strong><span>{milestone.title}</span><b>{milestone.currency} {milestone.rewardAmount.toFixed(2)}</b><small>{milestone.countryCode}</small></div>)}</div></>}
@@ -192,8 +204,8 @@ export default function App() {
           </div>
           {messageStatus && <div className={messageStatus.startsWith("Message sent") ? "success" : "error"}>{messageStatus}</div>}
         </section>
-        <section className="next"><h2>Admin modules</h2><div><a className="module-link" href="#offer-management">Game uploads and store links</a><a className="module-link" href="#reward-management">Milestone reward schedules</a><a className="module-link module-placeholder-link" href="#wallet-review">Wallet and payout review <small>Coming soon</small></a><a className="module-link module-placeholder-link" href="#audit-log">Audit log <small>Coming soon</small></a></div></section>
-        <section id="wallet-review" className="panel module-placeholder"><p className="eyebrow">WALLET AND PAYOUT REVIEW</p><h2>Wallet review module</h2><p>This admin destination is reserved for payout approvals and wallet review. It is not active yet.</p></section>
+        <section className="next"><h2>Admin modules</h2><div><a className="module-link" href="#offer-management">Game uploads and store links</a><a className="module-link" href="#reward-management">Milestone reward schedules</a><a className="module-link" href="#wallet-review">Wallet and payout review</a><a className="module-link module-placeholder-link" href="#audit-log">Audit log <small>Coming soon</small></a></div></section>
+        <section id="wallet-review" className="panel"><div className="panel-title"><div><p className="eyebrow">WALLET AND PAYOUT REVIEW</p><h2>Manual withdrawal queue</h2></div><span>{withdrawals.length} requests</span></div><p className="helper">Review each request, manually send the payout outside GameZone, then mark it paid. GameZone never sends funds automatically.</p><div className="withdrawal-list">{withdrawals.length ? withdrawals.map((item) => <article className="withdrawal-card" key={item.id}><div><strong>{item.user.username}</strong><small>{item.user.email} · {item.user.countryCode || "Country not set"}</small><p>{item.currencyCode} {Number(item.amount).toFixed(2)} · {item.payoutProfile.method} · {item.payoutProfile.maskedDetails}</p><small>{new Date(item.createdAt).toLocaleString()} · {item.status}</small></div><div className="withdrawal-actions">{item.status === "pending" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "approved")}>Approve</button>}{item.status === "approved" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "paid")}>Mark paid</button>}{["pending", "approved"].includes(item.status) && <><button className="action" onClick={() => void updateWithdrawalStatus(item.id, "needs_correction")}>Needs correction</button><button className="action ban" onClick={() => void updateWithdrawalStatus(item.id, "rejected")}>Reject</button></>}</div></article>) : <p className="empty">No withdrawal requests yet.</p>}</div></section>
         <section id="audit-log" className="panel module-placeholder"><p className="eyebrow">AUDIT LOG</p><h2>Audit log module</h2><p>This admin destination is reserved for immutable activity history. It is not active yet.</p></section>
       </main>
     </div>

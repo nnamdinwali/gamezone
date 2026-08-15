@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   useListEarnings, getListEarningsQueryKey, 
-  useGetUser, getGetUserQueryKey,
-  useRequestWithdrawal 
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,6 +16,11 @@ import { useCurrentUser } from "@/lib/current-user";
 
 export function EarningsPage() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [payoutMethods, setPayoutMethods] = useState<string[]>([]);
+  const [payoutProfiles, setPayoutProfiles] = useState<Array<{ id: number; method: string; label: string; maskedDetails: string }>>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState("");
+  const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
+  const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
   // Balances are stored in the base currency; the visitor sees their local one.
   const { currency, rate, format: formatMoney } = useCurrency();
 
@@ -31,7 +34,13 @@ export function EarningsPage() {
     { query: { enabled: !!userId, queryKey: getListEarningsQueryKey({ userId }) } }
   );
 
-  const withdraw = useRequestWithdrawal();
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`${API_BASE}/api/payout-methods`, { credentials: "include", cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Unable to load payout methods")))
+      .then((data) => { setPayoutMethods(data.methods || []); setPayoutProfiles(data.profiles || []); setSelectedProfileId((current) => current || String(data.profiles?.[0]?.id || "")); })
+      .catch(() => undefined);
+  }, [userId]);
 
   const handleWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,28 +59,22 @@ export function EarningsPage() {
       return;
     }
 
+    if (!selectedProfileId) {
+      toast({ title: "Payout method required", description: "Save a payout method in your profile before requesting a withdrawal.", variant: "destructive" });
+      return;
+    }
+
     if (user && amount > user.balance) {
       toast({ title: "Insufficient Funds", description: "You cannot withdraw more than your balance.", variant: "destructive" });
       return;
     }
 
-    withdraw.mutate(
-      { data: { userId: userId ?? 0, amount } },
-      {
-        onSuccess: () => {
-          toast({ title: "Withdrawal Requested", description: `${formatMoney(amount)} is being processed.`, variant: "success" });
-          setWithdrawAmount("");
-          refetchUser();
-          refetchEarnings();
-        },
-        onError: (error: any) => {
-          const message = error?.message?.includes("Account banned")
-            ? "Your account is banned. Earnings and withdrawals are unavailable."
-            : "Something went wrong.";
-          toast({ title: error?.message?.includes("Account banned") ? "Account Banned" : "Withdrawal Failed", description: message, variant: "destructive" });
-        }
-      }
-    );
+    setIsSubmittingWithdrawal(true);
+    fetch(`${API_BASE}/api/withdrawals`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, payoutProfileId: Number(selectedProfileId) }) })
+      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.message || data.error || "Withdrawal failed"); return data; })
+      .then(() => { toast({ title: "Withdrawal Requested", description: `${formatMoney(amount)} is pending owner review. No payment has been sent yet.`, variant: "success" }); setWithdrawAmount(""); void refetchUser(); void refetchEarnings(); })
+      .catch((error: Error) => toast({ title: error.message.includes("banned") ? "Account Banned" : "Withdrawal Failed", description: error.message, variant: "destructive" }))
+      .finally(() => setIsSubmittingWithdrawal(false));
   };
 
   return (
@@ -118,6 +121,10 @@ export function EarningsPage() {
             <div className="pt-6 border-t border-border">
               <form onSubmit={handleWithdraw} className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="payoutProfile" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Payout method</Label>
+                  {payoutProfiles.length ? <select id="payoutProfile" value={selectedProfileId} onChange={(event) => setSelectedProfileId(event.target.value)} disabled={isBanned} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm"><option value="">Select saved method</option>{payoutProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label || profile.maskedDetails}</option>)}</select> : <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">No saved payout method. Add one from your Profile page. Available here: {payoutMethods.join(", ") || "PayPal"}.</p>}
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="amount" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Withdraw Amount ({currency})</Label>
                   <div className="relative">
                     <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -130,7 +137,7 @@ export function EarningsPage() {
                       className="pl-10 font-mono text-lg h-12"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      disabled={isBanned || withdraw.isPending}
+                      disabled={isBanned || isSubmittingWithdrawal}
                     />
                   </div>
                 </div>
@@ -138,9 +145,9 @@ export function EarningsPage() {
                   type="submit" 
                   variant="accent" 
                   className="w-full h-12 text-base"
-                  disabled={isBanned || withdraw.isPending || !withdrawAmount}
+                  disabled={isBanned || isSubmittingWithdrawal || !withdrawAmount}
                 >
-                  {isBanned ? "WITHDRAWAL LOCKED" : withdraw.isPending ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
+                  {isBanned ? "WITHDRAWAL LOCKED" : isSubmittingWithdrawal ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
                 </Button>
               </form>
             </div>
