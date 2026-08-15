@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Play, Coins, Users, Star, ArrowLeft, Calendar, User } from "lucide-react";
 import { format } from "date-fns";
+import { resolveGameImageUrl } from "@/lib/media";
 
 export function GameDetailPage() {
   const [, params] = useRoute("/games/:id");
@@ -19,10 +20,7 @@ export function GameDetailPage() {
 
   const handlePlayAndEarn = () => {
     if (!game) return;
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const storeUrl = /iphone|ipad|ipod/.test(userAgent)
-      ? game.iosStoreUrl || game.androidStoreUrl
-      : game.androidStoreUrl || game.iosStoreUrl;
+    const storeUrl = game.storeUrl || game.gameUrl;
 
     if (storeUrl) {
       window.location.assign(storeUrl);
@@ -76,7 +74,7 @@ export function GameDetailPage() {
           {/* Game Cover */}
           <div className="relative aspect-video rounded-3xl overflow-hidden border border-border group">
             <img 
-              src={game.thumbnailUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`} 
+              src={resolveGameImageUrl(game.thumbnailUrl) || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`} 
               alt={game.title}
               className="w-full h-full object-cover"
               onError={(e) => {

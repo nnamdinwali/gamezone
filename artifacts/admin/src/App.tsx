@@ -41,7 +41,7 @@ export default function App() {
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [milestoneForm, setMilestoneForm] = useState({ level: "10", title: "Reach level 10", rewardAmount: "0.10", currency: "USD", countryCode: "US" });
-  const [gameForm, setGameForm] = useState({ title: "", description: "", genre: "Arcade", storeUrl: "", creatorName: "Rockcity Studio", rewardPerMinute: "0.05" });
+  const [gameForm, setGameForm] = useState({ title: "", description: "", genre: "Arcade", storeUrl: "", creatorName: "Rockcity Studio", rewardPerMinute: "" });
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -125,6 +125,12 @@ export default function App() {
   };
 
   const createGame = async () => {
+    setError("");
+    const reward = Number(gameForm.rewardPerMinute);
+    if (!gameForm.title.trim() || !gameForm.description.trim() || !gameForm.storeUrl.trim() || !Number.isFinite(reward) || reward <= 0) {
+      setError("Enter the game name, description, Store URL, and a reward per minute greater than zero.");
+      return;
+    }
     if (!coverImage) {
       setError("Choose a cover image before creating the game offer.");
       return;
@@ -141,7 +147,7 @@ export default function App() {
       const created = await adminFetch<AdminGame>("/api/games", { method: "POST", body: payload });
       setGames((current) => [created, ...current]);
       setSelectedGameId(created.id);
-      setGameForm({ ...gameForm, title: "", description: "", storeUrl: "" });
+      setGameForm({ ...gameForm, title: "", description: "", storeUrl: "", rewardPerMinute: "" });
       setCoverImage(null);
       const input = document.getElementById("game-cover-image") as HTMLInputElement | null;
       if (input) input.value = "";
@@ -207,7 +213,7 @@ export default function App() {
         </section>
         <section id="offer-management" className="panel game-panel">
           <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Upload a game offer</h2></div><span>Store-link APK flow</span></div>
-          <div className="upload-grid"><input placeholder="Game title" value={gameForm.title} onChange={(e) => setGameForm({ ...gameForm, title: e.target.value })} /><input placeholder="Creator / studio" value={gameForm.creatorName} onChange={(e) => setGameForm({ ...gameForm, creatorName: e.target.value })} /><input placeholder="Genre" value={gameForm.genre} onChange={(e) => setGameForm({ ...gameForm, genre: e.target.value })} /><label className="file-field">Cover image<input id="game-cover-image" type="file" accept="image/*" onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)} /></label><input placeholder="Store URL (Huawei, Google Play, App Store, etc.)" type="url" value={gameForm.storeUrl} onChange={(e) => setGameForm({ ...gameForm, storeUrl: e.target.value })} /><input placeholder="Reward per minute" type="number" min="0" step="0.01" value={gameForm.rewardPerMinute} onChange={(e) => setGameForm({ ...gameForm, rewardPerMinute: e.target.value })} /><textarea placeholder="Description" value={gameForm.description} onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })} rows={3} /><button className="refresh" onClick={() => void createGame()}>Create game offer</button></div>
+          <div className="upload-grid"><input placeholder="Game title" value={gameForm.title} onChange={(e) => setGameForm({ ...gameForm, title: e.target.value })} /><input placeholder="Creator / studio" value={gameForm.creatorName} onChange={(e) => setGameForm({ ...gameForm, creatorName: e.target.value })} /><input placeholder="Genre" value={gameForm.genre} onChange={(e) => setGameForm({ ...gameForm, genre: e.target.value })} /><label className="file-field">Cover image<input id="game-cover-image" type="file" accept="image/*" onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)} /></label><input placeholder="Store URL (Huawei, Google Play, App Store, etc.)" type="url" value={gameForm.storeUrl} onChange={(e) => setGameForm({ ...gameForm, storeUrl: e.target.value })} /><input placeholder="Reward per minute (required)" type="number" min="0.01" step="0.01" required value={gameForm.rewardPerMinute} onChange={(e) => setGameForm({ ...gameForm, rewardPerMinute: e.target.value })} /><textarea placeholder="Description" value={gameForm.description} onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })} rows={3} /><button className="refresh" onClick={() => void createGame()}>Create game offer</button></div>
           <div id="reward-management" className="panel-title"><div><p className="eyebrow">REWARD MANAGEMENT</p><h2>Games and milestones</h2></div><span>{games.length} games</span></div>
           <div className="game-controls"><select value={selectedGameId ?? ""} onChange={(event) => setSelectedGameId(Number(event.target.value))}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select><span>{selectedGameId ? "Configure reward schedule" : "Choose a game to manage milestones"}</span></div>
           {selectedGameId && <><div className="milestone-form"><input type="number" min="1" value={milestoneForm.level} onChange={(event) => setMilestoneForm({ ...milestoneForm, level: event.target.value })} placeholder="Level" /><input value={milestoneForm.title} onChange={(event) => setMilestoneForm({ ...milestoneForm, title: event.target.value })} placeholder="Milestone title" /><input type="number" min="0" step="0.01" value={milestoneForm.rewardAmount} onChange={(event) => setMilestoneForm({ ...milestoneForm, rewardAmount: event.target.value })} placeholder="Reward" /><input value={milestoneForm.currency} onChange={(event) => setMilestoneForm({ ...milestoneForm, currency: event.target.value.toUpperCase() })} placeholder="Currency" /><input value={milestoneForm.countryCode} onChange={(event) => setMilestoneForm({ ...milestoneForm, countryCode: event.target.value.toUpperCase() })} placeholder="Country" /><button className="refresh" onClick={createMilestone}>Add milestone</button></div><div className="milestone-list">{milestones.map((milestone) => <div className="milestone" key={milestone.id}><strong>Level {milestone.level}</strong><span>{milestone.title}</span><b>{milestone.currency} {milestone.rewardAmount.toFixed(2)}</b><small>{milestone.countryCode}</small></div>)}</div></>}

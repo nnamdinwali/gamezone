@@ -11,6 +11,7 @@ import { Zap, Coins, Clock, AlertTriangle, Play, SquareSquare } from "lucide-rea
 import { toast } from "@/hooks/use-toast";
 import { formatNumber } from "@/lib/utils";
 import { useCurrentUser } from "@/lib/current-user";
+import { resolveGameImageUrl } from "@/lib/media";
 
 export function PlayPage() {
   const [, params] = useRoute("/play/:id");
@@ -135,7 +136,7 @@ export function PlayPage() {
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
             <img 
-              src={game.thumbnailUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`} 
+              src={resolveGameImageUrl(game.thumbnailUrl) || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`} 
               alt=""
               className="w-10 h-10 rounded object-cover"
             />

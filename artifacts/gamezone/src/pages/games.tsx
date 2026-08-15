@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Gamepad2, Coins, Users } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
+import { resolveGameImageUrl } from "@/lib/media";
 
 const GENRES = ["Action", "Adventure", "Puzzle", "Arcade", "Strategy", "RPG", "Shooter", "Sports"];
 
@@ -84,7 +85,7 @@ export function GamesPage() {
               <Card className="group cursor-pointer hover:-translate-y-1 transition-all duration-300 hover:border-primary/50 hover:box-glow h-full flex flex-col overflow-hidden bg-card/80 backdrop-blur-sm">
                 <div className="relative h-48 overflow-hidden bg-muted">
                   <img 
-                    src={game.thumbnailUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`} 
+                    src={resolveGameImageUrl(game.thumbnailUrl) || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`} 
                     alt={game.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 mix-blend-luminosity"
                     onError={(e) => {

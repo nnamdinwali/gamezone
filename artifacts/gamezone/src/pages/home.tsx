@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useCurrency, useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
+import { resolveGameImageUrl } from "@/lib/media";
 
 const CASHOUT_TARGET = 2.5;
 const SUPPORTED_CURRENCIES = ["USD", "NGN", "GHS", "KES", "ZAR", "GBP", "CAD", "AUD", "EUR", "INR", "BRL", "MXN", "JPY", "CNY"];
@@ -138,11 +139,11 @@ export function HomePage() {
 }
 
 function OfferCard({ game, featured = false, formatCurrency, disabled = false }: { game: any; featured?: boolean; formatCurrency: (value: number) => string; disabled?: boolean }) {
-  const reward = 0.17;
+  const reward = Number(game.rewardPerMinute ?? 0);
   const content = (
     <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
       <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
-        {game.thumbnailUrl ? <img src={game.thumbnailUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
+        {resolveGameImageUrl(game.thumbnailUrl) ? <img src={resolveGameImageUrl(game.thumbnailUrl)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#171827] to-transparent" />
       </div>
       <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
