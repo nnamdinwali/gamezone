@@ -7,27 +7,37 @@ const API_BASE = import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.m
 const SESSION_QUERY_KEY = getGetCurrentUserQueryKey();
 
 async function fetchCurrentUser(): Promise<User | null> {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 7000);
-  try {
-    const response = await fetch(`${API_BASE}/api/users/me`, {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    if (response.status === 401) return null;
-    if (!response.ok) throw new Error(`Session request failed (${response.status})`);
-    return (await response.json()) as User;
-  } finally {
-    window.clearTimeout(timeout);
+  const isOAuthReturn = new URLSearchParams(window.location.search).get("gamezone_auth") === "1";
+  const maxAttempts = isOAuthReturn ? 12 : 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 7000);
+    try {
+      const response = await fetch(`${API_BASE}/api/users/me`, {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (response.status === 401 && attempt < maxAttempts - 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 500));
+        continue;
+      }
+      if (response.status === 401) return null;
+      if (!response.ok) throw new Error(`Session request failed (${response.status})`);
+      return (await response.json()) as User;
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
+  return null;
 }
 
 export function startLogin() {
-  const returnUri = `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const returnUrl = new URL(`${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`);
+  returnUrl.searchParams.set("gamezone_auth", "1");
   const url = new URL(`${API_BASE}/api/auth/login`);
-  url.searchParams.set("returnUri", returnUri);
+  url.searchParams.set("returnUri", returnUrl.toString());
   // Navigation (rather than fetch) lets the API set its host-only OAuth state cookie.
   window.location.assign(url.toString());
 }

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useManusAuth, startLogin } from '@/lib/manus-auth';
-import { Route, Switch, Router as WouterRouter, Link, Redirect } from 'wouter';
+import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CurrencyProvider } from '@/lib/currency';
 
@@ -61,6 +61,13 @@ function PublicLanding() {
 }
 
 function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  const auth = useManusAuth();
+  const [, navigate] = useLocation();
+  const isOAuthReturn = new URLSearchParams(window.location.search).get('gamezone_auth') === '1';
+  useEffect(() => {
+    if (isOAuthReturn && auth.isSignedIn) navigate('/');
+  }, [auth.isSignedIn, isOAuthReturn, navigate]);
+  if (isOAuthReturn && auth.isLoading) return <AuthLoading retry={() => window.location.reload()} />;
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4 text-[#f2fff5]">
       <div className="w-full max-w-md rounded-2xl border border-[#31533d] bg-[#102319] p-8 text-center">
