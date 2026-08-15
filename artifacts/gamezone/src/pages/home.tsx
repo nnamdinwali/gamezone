@@ -59,7 +59,7 @@ export function HomePage() {
       {isBanned && (
         <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)] md:p-6">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
-          <h2 className="mt-2 text-xl font-bold md:text-2xl">Your GameZone account has been banned</h2>
+          <h2 className="mt-2 text-xl font-bold md:text-2xl">Your Rockcity account has been banned</h2>
           <p className="mt-2 text-sm leading-6 text-red-100/90">You cannot earn rewards or request withdrawals while this restriction is active. {bannedUser?.banReason ? `Reason: ${bannedUser.banReason}` : "Please contact support if you believe this is a mistake."}</p>
         </section>
       )}

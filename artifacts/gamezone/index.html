@@ -5,21 +5,21 @@
     <style>
       html, body { margin: 0; min-height: 100%; background: #07140c; }
       #root { min-height: 100dvh; }
-      .gamezone-boot { min-height: 100dvh; display: grid; place-items: center; color: #f2fff5; font: 600 16px/1.5 Inter, system-ui, sans-serif; }
-      .gamezone-boot-card { padding: 28px; text-align: center; }
-      .gamezone-boot-dot { width: 40px; height: 40px; margin: 0 auto 16px; border-radius: 999px; background: rgba(57,227,107,.3); animation: gamezone-pulse 1.2s ease-in-out infinite; }
-      @keyframes gamezone-pulse { 50% { transform: scale(1.12); opacity: .65; } }
+      .rockcity-boot { min-height: 100dvh; display: grid; place-items: center; color: #f2fff5; font: 600 16px/1.5 Inter, system-ui, sans-serif; }
+      .rockcity-boot-card { padding: 28px; text-align: center; }
+      .rockcity-boot-dot { width: 40px; height: 40px; margin: 0 auto 16px; border-radius: 999px; background: rgba(57,227,107,.3); animation: rockcity-pulse 1.2s ease-in-out infinite; }
+      @keyframes rockcity-pulse { 50% { transform: scale(1.12); opacity: .65; } }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>GameZone</title>
-    <meta name="description" content="GameZone — play games, track your balance, and climb the leaderboard." />
+    <title>Rockcity</title>
+    <meta name="description" content="Rockcity — play games, track your balance, and climb the leaderboard." />
     <meta name="robots" content="index, follow" />
-    <meta property="og:title" content="GameZone" />
-    <meta property="og:description" content="GameZone — play games, track your balance, and climb the leaderboard." />
+    <meta property="og:title" content="Rockcity" />
+    <meta property="og:description" content="Rockcity — play games, track your balance, and climb the leaderboard." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GameZone" />
-    <meta name="twitter:description" content="GameZone — play games, track your balance, and climb the leaderboard." />
+    <meta name="twitter:title" content="Rockcity" />
+    <meta name="twitter:description" content="Rockcity — play games, track your balance, and climb the leaderboard." />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,8 +27,8 @@
   </head>
   <body>
     <div id="root">
-      <div class="gamezone-boot" role="status" aria-live="polite">
-        <div class="gamezone-boot-card"><div class="gamezone-boot-dot" aria-hidden="true"></div><div>Loading GameZone…</div></div>
+      <div class="rockcity-boot" role="status" aria-live="polite">
+        <div class="rockcity-boot-card"><div class="rockcity-boot-dot" aria-hidden="true"></div><div>Loading Rockcity…</div></div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

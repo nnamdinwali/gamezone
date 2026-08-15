@@ -39,7 +39,7 @@ export function useAdminAuth() {
       if (nextSession.email?.trim().toLowerCase() !== ADMIN_OWNER_EMAIL) {
         await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => undefined);
         setSession(null);
-        setError("This account is not authorized for GameZone Admin. Sign in with the owner account.");
+        setError("This account is not authorized for Rockcity Admin. Sign in with the owner account.");
         return;
       }
       setSession(nextSession);

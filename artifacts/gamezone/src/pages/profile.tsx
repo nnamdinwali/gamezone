@@ -174,7 +174,7 @@ export function ProfilePage() {
       const response = await fetch(`${API_BASE}/api/support/messages`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject: supportSubject.trim(), message: supportMessage.trim() }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to send support message");
-      setSupportSubject(""); setSupportMessage(""); setSupportStatus("Message sent to GameZone support.");
+      setSupportSubject(""); setSupportMessage(""); setSupportStatus("Message sent to Rockcity support.");
     } catch (error) { setSupportStatus(error instanceof Error ? error.message : "Unable to send support message"); }
   };
 
@@ -328,7 +328,7 @@ export function ProfilePage() {
           </div>
 
           <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
-            <div><h3 className="text-lg font-bold font-heading">Contact support</h3><p className="text-sm text-muted-foreground">Send a message to the GameZone owner. Replies will appear in your notification bell.</p></div>
+            <div><h3 className="text-lg font-bold font-heading">Contact support</h3><p className="text-sm text-muted-foreground">Send a message to the Rockcity owner. Replies will appear in your notification bell.</p></div>
             <Input placeholder="Subject" value={supportSubject} onChange={(event) => setSupportSubject(event.target.value)} />
             <textarea className="min-h-28 w-full rounded-md border border-border bg-input px-3 py-3 text-sm" placeholder="Tell us what you need help with" value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} />
             <Button type="button" onClick={() => void handleSendSupport()} className="w-full h-12 rounded-xl font-bold">Send to support</Button>

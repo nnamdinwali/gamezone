@@ -88,7 +88,7 @@ export function EarningsPage() {
         <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)]">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
           <h2 className="mt-2 text-xl font-bold">Withdrawals are unavailable</h2>
-          <p className="mt-2 text-sm leading-6 text-red-100/90">Your GameZone account has been banned, so you cannot access earnings or request a withdrawal. {bannedUser?.banReason ? `Reason: ${bannedUser.banReason}` : "Please contact support if you believe this is a mistake."}</p>
+          <p className="mt-2 text-sm leading-6 text-red-100/90">Your Rockcity account has been banned, so you cannot access earnings or request a withdrawal. {bannedUser?.banReason ? `Reason: ${bannedUser.banReason}` : "Please contact support if you believe this is a mistake."}</p>
         </section>
       )}
 

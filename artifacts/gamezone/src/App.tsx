@@ -72,7 +72,7 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     <main className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4 text-[#f2fff5]">
       <div className="w-full max-w-md rounded-2xl border border-[#31533d] bg-[#102319] p-8 text-center">
         <h1 className="font-heading text-3xl font-bold">{mode === 'sign-in' ? 'Welcome back' : 'Join ROCKCITY GAMES'}</h1>
-        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Continue with your Manus account. Your GameZone profile and rewards are created automatically after authentication.</p>
+        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Continue with your Manus account. Your Rockcity profile and rewards are created automatically after authentication.</p>
         <button type="button" onClick={startLogin} className="mt-7 w-full rounded-xl bg-[#39e36b] px-5 py-3.5 font-bold text-[#06200d] hover:bg-[#62f07f]">{mode === 'sign-in' ? 'Sign in with Manus' : 'Create account with Manus'}</button>
         <Link href="/" className="mt-5 inline-block text-sm text-[#62f07f] hover:underline">Return home</Link>
       </div>
@@ -86,7 +86,7 @@ function AuthLoading({ error, retry }: { error?: unknown; retry: () => void }) {
     <main className="flex min-h-[100dvh] items-center justify-center bg-[#07140c] px-4 text-[#f2fff5]">
       <div className="w-full max-w-md rounded-2xl border border-[#31533d] bg-[#102319] p-8 text-center">
         <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-[#39e36b]/30" aria-hidden="true" />
-        <h1 className="mt-5 text-2xl font-bold">Connecting to GameZone</h1>
+        <h1 className="mt-5 text-2xl font-bold">Connecting to Rockcity</h1>
         <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">{message}</p>
         <button type="button" onClick={retry} className="mt-6 rounded-xl bg-[#39e36b] px-5 py-3 font-bold text-[#06200d]">Try again</button>
         <Link href="/" className="ml-3 text-sm text-[#62f07f] hover:underline">Continue as visitor</Link>
