@@ -25,7 +25,7 @@ async function fetchCurrentUser(): Promise<User | null> {
 }
 
 export function startLogin() {
-  const returnUri = `${window.location.origin}${import.meta.env.BASE_URL || "/"}`;
+  const returnUri = `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`;
   const url = new URL(`${API_BASE}/api/auth/login`);
   url.searchParams.set("returnUri", returnUri);
   // Navigation (rather than fetch) lets the API set its host-only OAuth state cookie.
