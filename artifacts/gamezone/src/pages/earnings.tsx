@@ -23,6 +23,8 @@ export function EarningsPage() {
 
   const { data: user, isLoading: isUserLoading, refetch: refetchUser } = useCurrentUser();
   const userId = user?.id;
+  const bannedUser = user as (typeof user & { bannedAt?: string | null; banReason?: string | null }) | undefined;
+  const isBanned = Boolean(bannedUser?.bannedAt);
 
   const { data: earnings, isLoading: isEarningsLoading, refetch: refetchEarnings } = useListEarnings(
     { userId },
@@ -37,6 +39,11 @@ export function EarningsPage() {
     // base currency before it ever touches a balance.
     const localAmount = parseFloat(withdrawAmount);
     const amount = Math.round((localAmount / (rate || 1)) * 100) / 100;
+
+    if (isBanned) {
+      toast({ title: "Account Banned", description: "Earnings and withdrawals are unavailable while your account is banned.", variant: "destructive" });
+      return;
+    }
 
     if (isNaN(amount) || amount <= 0) {
       toast({ title: "Invalid Amount", description: "Please enter a valid amount.", variant: "destructive" });
@@ -57,8 +64,11 @@ export function EarningsPage() {
           refetchUser();
           refetchEarnings();
         },
-        onError: () => {
-          toast({ title: "Withdrawal Failed", description: "Something went wrong.", variant: "destructive" });
+        onError: (error: any) => {
+          const message = error?.message?.includes("Account banned")
+            ? "Your account is banned. Earnings and withdrawals are unavailable."
+            : "Something went wrong.";
+          toast({ title: error?.message?.includes("Account banned") ? "Account Banned" : "Withdrawal Failed", description: message, variant: "destructive" });
         }
       }
     );
@@ -70,6 +80,14 @@ export function EarningsPage() {
         <h1 className="text-4xl font-bold font-heading uppercase tracking-tighter text-glow-accent">Your Vault</h1>
         <p className="text-muted-foreground">Manage your earnings and withdraw to your wallet.</p>
       </div>
+
+      {isBanned && (
+        <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)]">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
+          <h2 className="mt-2 text-xl font-bold">Withdrawals are unavailable</h2>
+          <p className="mt-2 text-sm leading-6 text-red-100/90">Your GameZone account has been banned, so you cannot access earnings or request a withdrawal. {bannedUser?.banReason ? `Reason: ${bannedUser.banReason}` : "Please contact support if you believe this is a mistake."}</p>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Balance Card */}
@@ -112,7 +130,7 @@ export function EarningsPage() {
                       className="pl-10 font-mono text-lg h-12"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      disabled={withdraw.isPending}
+                      disabled={isBanned || withdraw.isPending}
                     />
                   </div>
                 </div>
@@ -120,9 +138,9 @@ export function EarningsPage() {
                   type="submit" 
                   variant="accent" 
                   className="w-full h-12 text-base"
-                  disabled={withdraw.isPending || !withdrawAmount}
+                  disabled={isBanned || withdraw.isPending || !withdrawAmount}
                 >
-                  {withdraw.isPending ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
+                  {isBanned ? "WITHDRAWAL LOCKED" : withdraw.isPending ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
                 </Button>
               </form>
             </div>

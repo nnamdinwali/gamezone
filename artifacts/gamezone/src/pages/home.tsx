@@ -51,9 +51,18 @@ export function HomePage() {
   const balance = Number(user?.balance ?? 0);
   const cashoutProgress = Math.min((balance / CASHOUT_TARGET) * 100, 100);
   const gamesPlayed = stats?.gamesPlayed ?? user?.gamesPlayed ?? 0;
+  const bannedUser = user as (typeof user & { bannedAt?: string | null; banReason?: string | null }) | undefined;
+  const isBanned = Boolean(bannedUser?.bannedAt);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 pb-8 md:max-w-5xl md:space-y-10">
+      {isBanned && (
+        <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)] md:p-6">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
+          <h2 className="mt-2 text-xl font-bold md:text-2xl">Your GameZone account has been banned</h2>
+          <p className="mt-2 text-sm leading-6 text-red-100/90">You cannot earn rewards or request withdrawals while this restriction is active. {bannedUser?.banReason ? `Reason: ${bannedUser.banReason}` : "Please contact support if you believe this is a mistake."}</p>
+        </section>
+      )}
       <section className="space-y-5">
         <div className="flex items-center justify-center gap-3 md:gap-5">
           <details className="group relative">
@@ -80,7 +89,7 @@ export function HomePage() {
 
       <section className="space-y-3">
         <div className="text-center text-xl font-medium text-white md:text-3xl">Next cashout</div>
-        <p className="text-center text-sm text-[#aaa9bb] md:text-base">{balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
+        <p className="text-center text-sm text-[#aaa9bb] md:text-base">{isBanned ? "Cashout and reward earning are unavailable while your account is banned." : balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
         <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5 md:h-12">
           <div className="flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] px-5 text-sm font-semibold text-white transition-all duration-700" style={{ width: `${cashoutProgress}%` }}>
             <span className={cashoutProgress === 0 ? "sr-only" : ""}>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
@@ -95,7 +104,7 @@ export function HomePage() {
         </div>
 
         {featured ? (
-          <OfferCard game={featured} featured formatCurrency={formatCurrency} />
+          <OfferCard game={featured} featured formatCurrency={formatCurrency} disabled={isBanned} />
         ) : isGamesLoading ? (
           <div className="h-[390px] animate-pulse rounded-3xl bg-[#1b1c2b]" />
         ) : (
@@ -114,7 +123,7 @@ export function HomePage() {
 
         {offers.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
-            {offers.map((game) => <OfferCard key={game.id} game={game} formatCurrency={formatCurrency} />)}
+            {offers.map((game) => <OfferCard key={game.id} game={game} formatCurrency={formatCurrency} disabled={isBanned} />)}
           </div>
         ) : (
           <Link href="/games" className="flex min-h-40 items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-[#171827] px-5 py-10 text-[#aaa9bb] hover:text-white md:min-h-52 md:text-lg"><Search className="h-5 w-5" /> Browse all games</Link>
@@ -128,10 +137,10 @@ export function HomePage() {
   );
 }
 
-function OfferCard({ game, featured = false, formatCurrency }: { game: any; featured?: boolean; formatCurrency: (value: number) => string }) {
+function OfferCard({ game, featured = false, formatCurrency, disabled = false }: { game: any; featured?: boolean; formatCurrency: (value: number) => string; disabled?: boolean }) {
   const reward = 0.17;
-  return (
-    <Link href={`/games/${game.id}`} className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition hover:-translate-y-0.5 hover:border-[#00d57e]/60 ${featured ? "" : "min-w-0"}`}>
+  const content = (
+    <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
       <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
         {game.thumbnailUrl ? <img src={game.thumbnailUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#171827] to-transparent" />
@@ -139,10 +148,9 @@ function OfferCard({ game, featured = false, formatCurrency }: { game: any; feat
       <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
         <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-white`}>{game.title}</p>
         <p className="truncate text-sm text-[#aaa9bb]">{game.description || "Install and play to earn rewards"}</p>
-        <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>
-          Play and Earn {formatCurrency(reward)}
-        </div>
+        <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>{disabled ? "Earning unavailable" : `Play and Earn ${formatCurrency(reward)}`}</div>
       </div>
-    </Link>
+    </div>
   );
+  return disabled ? content : <Link href={`/games/${game.id}`}>{content}</Link>;
 }
