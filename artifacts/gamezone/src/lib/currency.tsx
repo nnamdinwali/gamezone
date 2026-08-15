@@ -10,7 +10,10 @@ export const BASE_CURRENCY = "USD";
 const RATES_URL = `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`;
 const CACHE_KEY = "rockcity:fx-rates";
 const PREF_KEY = "rockcity:currency";
+const LOCKED_CURRENCY_KEY = "gamezone:currency-locked";
+const AUTO_CURRENCY_KEY = "gamezone:auto-currency";
 const COUNTRY_KEY = "gamezone:country-code";
+const IP_COUNTRY_URL = "https://ipapi.co/json/";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // refresh twice a day
 
 type RatesCache = { fetchedAt: number; rates: Record<string, number> };
@@ -88,19 +91,72 @@ function regionFromLocale(): string | null {
   }
 }
 
-function detectCurrency(): string {
-  const saved = typeof localStorage !== "undefined" ? localStorage.getItem(PREF_KEY) : null;
-  if (saved && /^[A-Z]{3}$/.test(saved)) return saved;
+function isCurrencyCode(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Z]{3}$/.test(value);
+}
 
-  const savedCountry = typeof localStorage !== "undefined" ? localStorage.getItem(COUNTRY_KEY)?.toUpperCase() : null;
-  if (savedCountry && REGION_CURRENCY[savedCountry]) return REGION_CURRENCY[savedCountry];
+function readStoredCurrency(key: string): string | null {
+  try {
+    const value = localStorage.getItem(key)?.toUpperCase();
+    return isCurrencyCode(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
 
-  const zoneRegion = regionFromTimeZone();
-  if (zoneRegion && REGION_CURRENCY[zoneRegion]) return REGION_CURRENCY[zoneRegion];
+async function detectCurrencyFromIp(): Promise<{ countryCode: string; currency: string } | null> {
+  try {
+    const response = await fetch(IP_COUNTRY_URL, { headers: { Accept: "application/json" } });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { country_code?: string };
+    const countryCode = body.country_code?.toUpperCase();
+    const currency = countryCode ? REGION_CURRENCY[countryCode] : undefined;
+    return countryCode && currency ? { countryCode, currency } : null;
+  } catch {
+    return null;
+  }
+}
 
-  const localeRegion = regionFromLocale();
-  if (localeRegion && REGION_CURRENCY[localeRegion]) return REGION_CURRENCY[localeRegion];
+async function resolveCurrency(): Promise<string> {
+  const locked = readStoredCurrency(LOCKED_CURRENCY_KEY);
+  if (locked) return locked;
 
+  // Read the server-side preference so a saved choice follows the user to another device.
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space"}/api/users/me`, { credentials: "include", cache: "no-store" });
+    if (response.ok) {
+      const profile = (await response.json()) as { currencyCode?: string | null };
+      if (isCurrencyCode(profile.currencyCode)) {
+        localStorage.setItem(LOCKED_CURRENCY_KEY, profile.currencyCode);
+        return profile.currencyCode;
+      }
+    }
+  } catch {
+    // Anonymous visitors and blocked third-party requests continue through local detection.
+  }
+
+  const automatic = readStoredCurrency(AUTO_CURRENCY_KEY);
+  if (automatic) return automatic;
+
+  const ipResult = await detectCurrencyFromIp();
+  if (ipResult) {
+    try {
+      localStorage.setItem(AUTO_CURRENCY_KEY, ipResult.currency);
+      if (!localStorage.getItem(COUNTRY_KEY)) localStorage.setItem(COUNTRY_KEY, ipResult.countryCode);
+    } catch {
+      /* private mode: continue without persistence */
+    }
+    void fetch(`${import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space"}/api/users/me`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ countryCode: ipResult.countryCode }),
+    }).catch(() => undefined);
+    return ipResult.currency;
+  }
+
+  // IP lookup can be blocked or masked by a VPN. Never infer a money unit from a
+  // device timezone in that case; USD is the transparent, safe default.
   return BASE_CURRENCY;
 }
 
@@ -153,16 +209,17 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    const target = detectCurrency();
-    setCurrencyState(target);
+    resolveCurrency().then((target) => {
+      if (cancelled) return;
+      setCurrencyState(target);
 
-    if (target === BASE_CURRENCY) {
-      setRate(1);
-      setReady(true);
-      return;
-    }
+      if (target === BASE_CURRENCY) {
+        setRate(1);
+        setReady(true);
+        return;
+      }
 
-    loadRates()
+      loadRates()
       .then((rates) => {
         if (cancelled) return;
         const found = rates[target];
@@ -183,6 +240,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         setRate(1);
         setReady(true);
       });
+    }).catch(() => {
+      if (!cancelled) {
+        setCurrencyState(BASE_CURRENCY);
+        setRate(1);
+        setReady(true);
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -213,8 +277,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       },
       setCurrency: (code: string | null) => {
         try {
-          if (code) localStorage.setItem(PREF_KEY, code);
-          else localStorage.removeItem(PREF_KEY);
+          if (code) {
+            localStorage.setItem(PREF_KEY, code);
+            localStorage.setItem(LOCKED_CURRENCY_KEY, code);
+          } else {
+            localStorage.removeItem(PREF_KEY);
+            localStorage.removeItem(LOCKED_CURRENCY_KEY);
+          }
         } catch {
           /* ignore */
         }

@@ -139,7 +139,7 @@ export function ProfilePage() {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ countryCode }),
+        body: JSON.stringify({ countryCode, currencyCode: preferredCurrency }),
       });
       if (!response.ok) throw new Error("Country preference could not be saved");
       if (preferredCurrency !== currency) setCurrency(preferredCurrency);
@@ -261,7 +261,7 @@ export function ProfilePage() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Detected automatically from your device — change it any time
+              Detected once from your IP when available. Save a currency to lock your choice across devices.
             </p>
           </div>
 

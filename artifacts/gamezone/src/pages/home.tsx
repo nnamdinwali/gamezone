@@ -1,19 +1,43 @@
 import { Link } from "wouter";
-import { ChevronRight, Gift, Search, Ticket, Trophy, WalletCards } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronRight, Gift, Search, Ticket, Trophy } from "lucide-react";
 import {
   getListGamesQueryKey,
   useGetUserStats,
   getGetUserStatsQueryKey,
   useListGames,
 } from "@workspace/api-client-react";
-import { useMoney } from "@/lib/currency";
+import { useCurrency, useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 
 const CASHOUT_TARGET = 2.5;
+const SUPPORTED_CURRENCIES = ["USD", "NGN", "GHS", "KES", "ZAR", "GBP", "CAD", "AUD", "EUR", "INR", "BRL", "MXN", "JPY", "CNY"];
+const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 
 export function HomePage() {
   const formatCurrency = useMoney();
+  const { currency, setCurrency } = useCurrency();
   const { data: user, isLoading: isUserLoading } = useCurrentUser();
+  const [selectedCurrency, setSelectedCurrency] = useState(currency);
+  const [currencyStatus, setCurrencyStatus] = useState("");
+  useEffect(() => setSelectedCurrency(currency), [currency]);
+
+  const saveCurrency = async () => {
+    setCurrencyStatus("Saving…");
+    try {
+      const response = await fetch(`${API_BASE}/api/users/me`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currencyCode: selectedCurrency }),
+      });
+      if (!response.ok) throw new Error("Could not save currency");
+      setCurrencyStatus("Saved. This choice is now locked.");
+      setCurrency(selectedCurrency);
+    } catch {
+      setCurrencyStatus("Could not save currency. Please try again.");
+    }
+  };
   const userId = user?.id;
   const { data: stats } = useGetUserStats(userId ?? 0, {
     query: { enabled: !!userId, queryKey: getGetUserStatsQueryKey(userId ?? 0) },
@@ -32,9 +56,21 @@ export function HomePage() {
     <div className="mx-auto w-full max-w-3xl space-y-8 pb-8 md:max-w-5xl md:space-y-10">
       <section className="space-y-5">
         <div className="flex items-center justify-center gap-3 md:gap-5">
-          <div className="flex min-w-[132px] items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)] md:min-w-[220px] md:px-7 md:py-4 md:text-3xl">
-            <span>{isUserLoading ? "—" : formatCurrency(balance)}</span>
-          </div>
+          <details className="group relative">
+            <summary className="flex min-w-[132px] cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)] outline-none transition hover:bg-[#1b1d32] focus-visible:ring-2 focus-visible:ring-[#00d57e] md:min-w-[220px] md:px-7 md:py-4 md:text-3xl">
+              <span>{isUserLoading ? "—" : formatCurrency(balance)}</span>
+            </summary>
+            <div className="absolute left-1/2 top-full z-20 mt-3 w-[min(88vw,330px)] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#171827] p-4 text-left text-sm font-normal shadow-2xl">
+              <p className="font-semibold text-white">Choose display currency</p>
+              <p className="mt-1 text-xs leading-5 text-[#aaa9bb]">Automatic detection is used only until you save a choice. Your saved currency will not be changed by future IP or device checks.</p>
+              <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-[#aaa9bb]" htmlFor="dashboard-currency">Currency</label>
+              <select id="dashboard-currency" value={selectedCurrency} onChange={(event) => setSelectedCurrency(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-white/10 bg-[#111322] px-3 text-white outline-none focus:border-[#00d57e]">
+                {SUPPORTED_CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}
+              </select>
+              <button type="button" onClick={() => void saveCurrency()} className="mt-3 h-11 w-full rounded-xl bg-[#00d57e] font-bold text-[#071b13] transition hover:bg-[#22e696]">Save currency</button>
+              {currencyStatus && <p className="mt-2 text-xs text-[#8ef0bd]" role="status">{currencyStatus}</p>}
+            </div>
+          </details>
           <div className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white md:min-w-[200px] md:px-7 md:py-4 md:text-3xl">
             <Ticket className="h-5 w-5 text-[#b6b4df]" />
             <span>0</span>
