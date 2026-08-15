@@ -184,8 +184,9 @@ export default function App() {
           rewardAmount: Number(milestoneForm.rewardAmount),
         }),
       });
-      const refreshed = await adminFetch<Milestone[]>(`/api/admin/games/${selectedGameId}/milestones`);
-      setMilestones(refreshed);
+      const refreshed = await adminFetch<Milestone[] | { milestones?: Milestone[] } | null>(`/api/admin/games/${selectedGameId}/milestones`);
+      const nextMilestones = Array.isArray(refreshed) ? refreshed : refreshed && Array.isArray(refreshed.milestones) ? refreshed.milestones : [];
+      setMilestones(nextMilestones);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create milestone");
     }

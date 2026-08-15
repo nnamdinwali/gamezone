@@ -1,4 +1,5 @@
 import { useRoute, Link } from "wouter";
+import { useEffect, useState } from "react";
 import { useGetGame, getGetGameQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,9 +8,14 @@ import { Play, Coins, Users, Star, ArrowLeft, Calendar, User } from "lucide-reac
 import { format } from "date-fns";
 import { resolveGameImageUrl } from "@/lib/media";
 
+const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
+type GameMilestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean };
+
 export function GameDetailPage() {
   const [, params] = useRoute("/games/:id");
   const id = params?.id ? parseInt(params.id, 10) : 0;
+  const [milestones, setMilestones] = useState<GameMilestone[]>([]);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
 
   const { data: game, isLoading, error } = useGetGame(id, {
     query: {
@@ -17,6 +23,23 @@ export function GameDetailPage() {
       queryKey: getGetGameQueryKey(id)
     }
   });
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setMilestonesLoading(true);
+    fetch(`${API_BASE}/api/games/${id}/milestones`, { credentials: "include", cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load milestones");
+        return response.json();
+      })
+      .then((payload) => {
+        if (!cancelled) setMilestones(Array.isArray(payload) ? payload : Array.isArray(payload?.milestones) ? payload.milestones : []);
+      })
+      .catch(() => { if (!cancelled) setMilestones([]); })
+      .finally(() => { if (!cancelled) setMilestonesLoading(false); });
+    return () => { cancelled = true; };
+  }, [id]);
 
   const handlePlayAndEarn = () => {
     if (!game) return;
@@ -148,6 +171,14 @@ export function GameDetailPage() {
                 <span className="font-mono">{format(new Date(game.createdAt), "MMM d, yyyy")}</span>
               </div>
             </div>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-card border border-border space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="font-heading font-bold uppercase text-sm text-muted-foreground tracking-wider">Milestone rewards</h3>
+              {milestones.length > 0 && <span className="text-xs text-muted-foreground">{milestones.length} goals</span>}
+            </div>
+            {milestonesLoading ? <p className="text-sm text-muted-foreground">Loading milestones…</p> : milestones.length === 0 ? <p className="text-sm text-muted-foreground">Milestones will appear here when they are configured.</p> : <div className="space-y-3">{milestones.map((milestone) => <div key={milestone.id} className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/40 p-3"><span className="min-w-24 rounded-lg bg-primary/15 px-3 py-2 text-center font-mono font-bold text-primary">{milestone.currency} {Number(milestone.rewardAmount).toFixed(2)}</span><span className="font-medium">{milestone.title || `Complete Level ${milestone.level}`}</span></div>)}</div>}
           </div>
         </div>
       </div>
