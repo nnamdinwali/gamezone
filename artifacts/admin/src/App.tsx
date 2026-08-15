@@ -1,6 +1,6 @@
 import { useAdminAuth, startAdminLogin } from "./admin-auth";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Activity, Ban, Gamepad2, LogOut, ShieldCheck, Users } from "lucide-react";
+import { Activity, Ban, ChevronRight, Gamepad2, LogOut, ShieldCheck, Users, X } from "lucide-react";
 import { adminFetch } from "./main";
 
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
@@ -8,6 +8,7 @@ type AdminGame = { id: number; title: string; genre: string; storeUrl: string; g
 type Milestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean };
 type Withdrawal = { id: number; userId: number; amount: number; currencyCode: string; status: string; reviewNote: string | null; createdAt: string; user: { username: string; email: string; countryCode: string | null }; payoutProfile: { method: string; label: string; maskedDetails: string; details: Record<string, string> } };
 type SupportMessage = { id: number; userId: number; subject: string; message: string; status: string; createdAt: string; readAt: string | null; user?: { username: string; email: string; countryCode: string | null } };
+type ActiveSession = { id: number; userId: number; username: string; email: string; gameId: number; gameTitle: string; startedAt: string };
 type AdminUser = {
   id: number;
   username: string;
@@ -51,27 +52,33 @@ export default function App() {
   const [messageStatus, setMessageStatus] = useState("");
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [operationPanel, setOperationPanel] = useState<"players" | "games" | "active" | "banned" | null>(null);
+  const [milestoneWorkspaceOpen, setMilestoneWorkspaceOpen] = useState(false);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [nextOverview, nextUsers, nextGames, nextWithdrawals, nextSupport] = await Promise.all([
+      const [nextOverview, nextUsers, nextGames, nextWithdrawals, nextSupport, nextActiveSessions] = await Promise.all([
         adminFetch<Overview>("/api/admin/overview"),
         adminFetch<AdminUser[]>("/api/admin/users"),
         adminFetch<AdminGame[]>("/api/games"),
         adminFetch<Withdrawal[]>("/api/admin/withdrawals"),
         adminFetch<{ messages: SupportMessage[] }>("/api/admin/support/messages"),
+        adminFetch<ActiveSession[]>("/api/admin/active-sessions"),
       ]);
       setOverview(nextOverview);
       const safeUsers = Array.isArray(nextUsers) ? nextUsers : [];
       const safeGames = Array.isArray(nextGames) ? nextGames : [];
       const safeWithdrawals = Array.isArray(nextWithdrawals) ? nextWithdrawals : [];
       const safeSupportMessages = Array.isArray(nextSupport?.messages) ? nextSupport.messages : [];
+      const safeActiveSessions = Array.isArray(nextActiveSessions) ? nextActiveSessions : [];
       setUsers(safeUsers);
       setGames(safeGames);
       setWithdrawals(safeWithdrawals);
       setSupportMessages(safeSupportMessages);
+      setActiveSessions(safeActiveSessions);
       setSelectedGameId((current) => current ?? safeGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
@@ -197,6 +204,17 @@ export default function App() {
     catch (err) { setError(err instanceof Error ? err.message : "Unable to update support message"); }
   };
 
+  const deleteGame = async (game: AdminGame) => {
+    if (!window.confirm(`Delete ${game.title}? This removes the uploaded offer from Rockcity.`)) return;
+    try {
+      await adminFetch(`/api/games/${game.id}`, { method: "DELETE" });
+      setGames((current) => current.filter((item) => item.id !== game.id));
+      if (selectedGameId === game.id) setSelectedGameId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete game");
+    }
+  };
+
   const unbanUser = async (id: number) => {
     try {
       await adminFetch(`/api/admin/users/${id}/unban`, { method: "PATCH" });
@@ -205,6 +223,9 @@ export default function App() {
       setError(err instanceof Error ? err.message : "Unable to unban user");
     }
   };
+
+  const selectedGame = games.find((game) => game.id === selectedGameId);
+  const visibleUsers = operationPanel === "banned" ? users.filter((account) => account.bannedAt) : users;
 
   return (
     <div className="admin-shell">
@@ -216,17 +237,18 @@ export default function App() {
         <div className="heading"><div><p className="eyebrow">CONTROL CENTER</p><h1>Platform operations</h1><p>Manage games, players, bans, rewards, and payout review from a separate administrator surface.</p></div><button className="refresh" onClick={loadAdminData}>Refresh</button></div>
         {error && <div className="error">{error}</div>}
         <section className="metrics">
-          <Metric icon={<Users />} label="Players" value={overview?.users ?? "—"} />
-          <Metric icon={<Gamepad2 />} label="Games" value={overview?.games ?? "—"} />
-          <Metric icon={<Activity />} label="Active sessions" value={overview?.activeSessions ?? "—"} />
-          <Metric icon={<Ban />} label="Banned accounts" value={overview?.bannedUsers ?? "—"} />
+          <Metric icon={<Users />} label="Players" value={overview?.users ?? "—"} onClick={() => setOperationPanel("players")} />
+          <Metric icon={<Gamepad2 />} label="Games" value={overview?.games ?? "—"} onClick={() => setOperationPanel("games")} />
+          <Metric icon={<Activity />} label="Active sessions" value={overview?.activeSessions ?? "—"} onClick={() => setOperationPanel("active")} />
+          <Metric icon={<Ban />} label="Banned accounts" value={overview?.bannedUsers ?? "—"} onClick={() => setOperationPanel("banned")} />
         </section>
+        {operationPanel && <section className="detail-panel panel"><div className="panel-title"><div><p className="eyebrow">PLATFORM DETAIL</p><h2>{operationPanel === "players" ? "Registered players" : operationPanel === "games" ? "Uploaded games" : operationPanel === "active" ? "Active sessions" : "Banned accounts"}</h2></div><button className="icon-button" onClick={() => setOperationPanel(null)} aria-label="Close detail"><X size={18} /></button></div>{operationPanel === "active" ? <div className="compact-list">{activeSessions.length ? activeSessions.map((session) => <article className="compact-row" key={session.id}><div><strong>{session.username}</strong><small>{session.email} · {session.gameTitle}</small></div><span>Started {new Date(session.startedAt).toLocaleString()}</span></article>) : <p className="empty">No users are currently playing.</p>}</div> : operationPanel === "games" ? <div className="compact-list">{games.length ? games.map((game) => <article className="compact-row" key={game.id}><div><strong>{game.title}</strong><small>{game.genre} · {game.storeUrl || "No Store URL"}</small></div><button className="action ban" onClick={() => void deleteGame(game)}>Delete</button></article>) : <p className="empty">No uploaded games yet.</p>}</div> : <div className="compact-list">{visibleUsers.length ? visibleUsers.map((account) => <article className="compact-row" key={account.id}><div><strong>{account.username}</strong><small>{account.email} · {account.countryCode || "Country not set"}</small></div>{operationPanel === "banned" ? <button className="action unban" onClick={() => void unbanUser(account.id)}>Unban</button> : <button className="action" onClick={() => setOperationPanel(null)}>View in users table</button>}</article>) : <p className="empty">No accounts in this view.</p>}</div>}</section>}
         <section id="offer-management" className="panel game-panel">
           <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Upload a game offer</h2></div><span>Store-link APK flow</span></div>
           <div className="upload-grid"><input placeholder="Game title" value={gameForm.title} onChange={(e) => setGameForm({ ...gameForm, title: e.target.value })} /><input placeholder="Creator / studio" value={gameForm.creatorName} onChange={(e) => setGameForm({ ...gameForm, creatorName: e.target.value })} /><input placeholder="Genre" value={gameForm.genre} onChange={(e) => setGameForm({ ...gameForm, genre: e.target.value })} /><label className="file-field">Cover image<input id="game-cover-image" type="file" accept="image/*" onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)} /></label><input placeholder="Store URL (Huawei, Google Play, App Store, etc.)" type="url" value={gameForm.storeUrl} onChange={(e) => setGameForm({ ...gameForm, storeUrl: e.target.value })} /><input placeholder="Reward per minute (required)" type="number" min="0.01" step="0.01" required value={gameForm.rewardPerMinute} onChange={(e) => setGameForm({ ...gameForm, rewardPerMinute: e.target.value })} /><textarea placeholder="Description" value={gameForm.description} onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })} rows={3} /><button className="refresh" onClick={() => void createGame()}>Create game offer</button></div>
-          <div id="reward-management" className="panel-title"><div><p className="eyebrow">REWARD MANAGEMENT</p><h2>Games and milestones</h2></div><span>{games.length} games</span></div>
-          <div className="game-controls"><select value={selectedGameId ?? ""} onChange={(event) => setSelectedGameId(Number(event.target.value))}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select><span>{selectedGameId ? "Configure reward schedule" : "Choose a game to manage milestones"}</span></div>
-          {selectedGameId && <><div className="milestone-form"><input type="number" min="1" value={milestoneForm.level} onChange={(event) => setMilestoneForm({ ...milestoneForm, level: event.target.value })} placeholder="Level" /><input value={milestoneForm.title} onChange={(event) => setMilestoneForm({ ...milestoneForm, title: event.target.value })} placeholder="Milestone title" /><input type="number" min="0" step="0.01" value={milestoneForm.rewardAmount} onChange={(event) => setMilestoneForm({ ...milestoneForm, rewardAmount: event.target.value })} placeholder="Reward" /><input value={milestoneForm.currency} onChange={(event) => setMilestoneForm({ ...milestoneForm, currency: event.target.value.toUpperCase() })} placeholder="Currency" /><input value={milestoneForm.countryCode} onChange={(event) => setMilestoneForm({ ...milestoneForm, countryCode: event.target.value.toUpperCase() })} placeholder="Country" /><button className="refresh" onClick={createMilestone}>Add milestone</button></div><div className="milestone-list">{milestones.map((milestone) => <div className="milestone" key={milestone.id}><strong>Level {milestone.level}</strong><span>{milestone.title}</span><b>{milestone.currency} {Number(milestone.rewardAmount ?? 0).toFixed(2)}</b><small>{milestone.countryCode}</small></div>)}</div></>}
+          <div id="reward-management" className="panel-title"><div><p className="eyebrow">REWARD MANAGEMENT</p><h2>Games and milestones</h2><p className="helper">Keep the dashboard compact; manage the full reward schedule only when needed.</p></div><span>{games.length} games</span></div>
+          <div className="game-controls"><select value={selectedGameId ?? ""} onChange={(event) => setSelectedGameId(Number(event.target.value))}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select>{selectedGameId && <><span>{selectedGame ? `${selectedGame.title} · ${milestones.length} milestones configured` : "Configure reward schedule"}</span><button className="refresh" onClick={() => setMilestoneWorkspaceOpen(true)}>Manage milestones <ChevronRight size={15} /></button></>}</div>
+          {milestoneWorkspaceOpen && selectedGameId && <div className="workspace"><div className="workspace-head"><div><p className="eyebrow">MILESTONE WORKSPACE</p><h3>{selectedGame?.title} reward schedule</h3><small>{milestones.length} milestones · grouped for compact administration</small></div><button className="icon-button" onClick={() => setMilestoneWorkspaceOpen(false)} aria-label="Close milestone workspace"><X size={18} /></button></div><div className="milestone-form"><input type="number" min="1" value={milestoneForm.level} onChange={(event) => setMilestoneForm({ ...milestoneForm, level: event.target.value })} placeholder="Level" /><input value={milestoneForm.title} onChange={(event) => setMilestoneForm({ ...milestoneForm, title: event.target.value })} placeholder="Milestone title" /><input type="number" min="0" step="0.01" value={milestoneForm.rewardAmount} onChange={(event) => setMilestoneForm({ ...milestoneForm, rewardAmount: event.target.value })} placeholder="Reward" /><input value={milestoneForm.currency} onChange={(event) => setMilestoneForm({ ...milestoneForm, currency: event.target.value.toUpperCase() })} placeholder="Currency" /><input value={milestoneForm.countryCode} onChange={(event) => setMilestoneForm({ ...milestoneForm, countryCode: event.target.value.toUpperCase() })} placeholder="Country" /><button className="refresh" onClick={createMilestone}>Add milestone</button></div><div className="milestone-list">{milestones.map((milestone) => <div className="milestone" key={milestone.id}><strong>Level {milestone.level}</strong><span>{milestone.title}</span><b>{milestone.currency} {Number(milestone.rewardAmount ?? 0).toFixed(2)}</b><small>{milestone.countryCode}</small></div>)}</div></div>}
         </section>
         <section className="panel">
           <div className="panel-title"><div><p className="eyebrow">ACCOUNT MANAGEMENT</p><h2>Users</h2></div><span>{loading ? "Updating…" : `${users.length} records`}</span></div>
@@ -251,6 +273,6 @@ export default function App() {
   );
 }
 
-function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: number | string }) {
-  return <article className="metric"><div className="metric-icon">{icon}</div><div><span>{label}</span><strong>{value}</strong></div></article>;
+function Metric({ icon, label, value, onClick }: { icon: ReactNode; label: string; value: number | string; onClick: () => void }) {
+  return <button className="metric metric-button" onClick={onClick} aria-label={`Open ${label}`}><div className="metric-icon">{icon}</div><div><span>{label}</span><strong>{value}</strong></div><ChevronRight className="metric-arrow" size={18} /></button>;
 }
