@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
+const ADMIN_OWNER_EMAIL = "jacksonmich972@gmail.com";
 
 type AdminSession = {
   openId: string;
@@ -32,7 +33,14 @@ export function useAdminAuth() {
         return;
       }
       if (!response.ok) throw new Error(`Session request failed (${response.status})`);
-      setSession((await response.json()) as AdminSession);
+      const nextSession = (await response.json()) as AdminSession;
+      if (nextSession.email?.trim().toLowerCase() !== ADMIN_OWNER_EMAIL) {
+        await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => undefined);
+        setSession(null);
+        setError("This account is not authorized for GameZone Admin. Sign in with the owner account.");
+        return;
+      }
+      setSession(nextSession);
     } catch (cause) {
       setSession(null);
       setError(cause instanceof Error ? cause.message : "Unable to load admin session");
