@@ -14,6 +14,9 @@ import { resolveGameImageUrl } from "@/lib/media";
 const CASHOUT_TARGET = 2.5;
 const SUPPORTED_CURRENCIES = ["USD", "NGN", "GHS", "KES", "ZAR", "GBP", "CAD", "AUD", "EUR", "INR", "BRL", "MXN", "JPY", "CNY"];
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
+// Bright remains intentionally inactive until the native SDK and server verification contract are connected.
+const BRIGHT_BONUS_ENABLED = false;
+const BONUS_POPUP_DELAY_MS = 60_000;
 
 export function HomePage() {
   const formatCurrency = useMoney();
@@ -34,19 +37,22 @@ export function HomePage() {
   useEffect(() => setSelectedCurrency(currency), [currency]);
 
   useEffect(() => {
-    if (!user?.id) return;
-    try {
-      const decision = localStorage.getItem(`rockcity:bonus-decision:${user.id}`) as typeof bonusStatus | null;
-      const pending = Number(localStorage.getItem(`rockcity:bonus-pending:${user.id}`));
-      if (decision === "accepted" || decision === "declined" || decision === "completed") {
-        setBonusStatus(decision);
-        if (Number.isFinite(pending) && pending >= 0) setBonusPending(pending);
-        return;
+    if (!BRIGHT_BONUS_ENABLED || !user?.id) return;
+    const timer = window.setTimeout(() => {
+      try {
+        const decision = localStorage.getItem(`rockcity:bonus-decision:${user.id}`) as typeof bonusStatus | null;
+        const pending = Number(localStorage.getItem(`rockcity:bonus-pending:${user.id}`));
+        if (decision === "accepted" || decision === "declined" || decision === "completed") {
+          setBonusStatus(decision);
+          if (Number.isFinite(pending) && pending >= 0) setBonusPending(pending);
+          return;
+        }
+        setBonusPopupOpen(true);
+      } catch {
+        setBonusPopupOpen(true);
       }
-      setBonusPopupOpen(true);
-    } catch {
-      setBonusPopupOpen(true);
-    }
+    }, BONUS_POPUP_DELAY_MS);
+    return () => window.clearTimeout(timer);
   }, [user?.id]);
 
   const acceptBonus = () => {
@@ -90,7 +96,7 @@ export function HomePage() {
   };
 
   const bonusAccepted = bonusStatus === "accepted" || bonusStatus === "completed";
-  const showCoupon = bonusAccepted && bonusPending > 0;
+  const showCoupon = BRIGHT_BONUS_ENABLED && bonusAccepted && bonusPending > 0;
 
   const saveCurrency = async () => {
     setCurrencyStatus("Saving…");
@@ -178,10 +184,12 @@ export function HomePage() {
               {currencyStatus && <p className="mt-2 text-xs text-[#8ef0bd]" role="status">{currencyStatus}</p>}
             </div>
           </details>
-          <button type="button" onClick={() => bonusAccepted && setBonusDetailsOpen(true)} className={`flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white md:min-w-[200px] md:px-7 md:py-4 md:text-3xl ${bonusAccepted ? "cursor-pointer transition hover:border-[#ffe21a] hover:shadow-[0_0_26px_rgba(255,226,26,.18)]" : "cursor-default"}`} aria-label={bonusAccepted ? "Open pending bonus details" : "Pending bonus unavailable"}>
-            <Ticket className={`h-5 w-5 ${showCoupon ? "text-[#ffe21a]" : "text-[#b6b4df]"}`} />
-            <span>{showCoupon ? formatBonus(bonusPending) : "₦0"}</span>
-          </button>
+          {showCoupon && (
+            <button type="button" onClick={() => setBonusDetailsOpen(true)} className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white transition hover:border-[#ffe21a] hover:shadow-[0_0_26px_rgba(255,226,26,.18)] md:min-w-[200px] md:px-7 md:py-4 md:text-3xl" aria-label="Open pending bonus details">
+              <Ticket className="h-5 w-5 text-[#ffe21a]" />
+              <span>{formatBonus(bonusPending)}</span>
+            </button>
+          )}
         </div>
       </section>
 
