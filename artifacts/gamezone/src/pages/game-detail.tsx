@@ -9,7 +9,7 @@ import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
-type GameMilestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean; completed?: boolean };
+type GameMilestone = { id: number; level: number; title: string; objectiveType?: "level" | "unlock" | "merge" | "stage" | "custom"; rewardAmount: number; currency: string; countryCode: string; isActive: boolean; completed?: boolean };
 
 export function GameDetailPage() {
   const [, params] = useRoute("/games/:id");
@@ -156,7 +156,7 @@ export function GameDetailPage() {
               <h3 className="font-heading font-bold uppercase text-sm text-muted-foreground tracking-wider">Milestone rewards</h3>
               {milestones.length > 0 && <span className="text-xs text-muted-foreground">{milestones.length} goals</span>}
             </div>
-            {milestonesLoading ? <p className="text-sm text-muted-foreground">Loading milestones…</p> : milestones.length === 0 ? <p className="text-sm text-muted-foreground">Milestones will appear here when they are configured.</p> : <div className="space-y-3">{milestones.map((milestone) => { const completed = Boolean(milestone.completed); return <div key={milestone.id} className={`flex items-center gap-3 rounded-xl border p-3 transition ${completed ? "border-primary/50 bg-primary/10" : "border-border/70 bg-background/40"}`}><span aria-label={completed ? "Milestone completed" : "Milestone not completed"} title={completed ? "Completed" : "Not completed"} className={completed ? "text-primary" : "text-muted-foreground/70"}>{completed ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}</span><span className="min-w-24 rounded-lg bg-primary/15 px-3 py-2 text-center font-mono font-bold text-primary">{milestone.currency} {Number(milestone.rewardAmount).toFixed(2)}</span><span className="font-medium">{milestone.title || `Complete Level ${milestone.level}`}</span></div>; })}</div>}
+            {milestonesLoading ? <p className="text-sm text-muted-foreground">Loading milestones…</p> : milestones.length === 0 ? <p className="text-sm text-muted-foreground">Milestones will appear here when they are configured.</p> : <div className="space-y-3">{milestones.map((milestone) => { const completed = Boolean(milestone.completed); return <div key={milestone.id} className={`flex items-center gap-3 rounded-xl border p-3 transition ${completed ? "border-primary/50 bg-primary/10" : "border-border/70 bg-background/40"}`}><span aria-label={completed ? "Milestone completed" : "Milestone not completed"} title={completed ? "Completed" : "Not completed"} className={completed ? "text-primary" : "text-muted-foreground/70"}>{completed ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}</span><span className="min-w-24 rounded-lg bg-primary/15 px-3 py-2 text-center font-mono font-bold text-primary">{milestone.currency} {Number(milestone.rewardAmount).toFixed(2)}</span><span className="font-medium">{milestone.title || (milestone.objectiveType === "level" ? `Reach level ${milestone.level}` : `Complete objective ${milestone.level}`)}</span></div>; })}</div>}
           </div>
         </div>
       </div>
