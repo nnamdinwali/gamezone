@@ -21,7 +21,70 @@ export function HomePage() {
   const { data: user, isLoading: isUserLoading } = useCurrentUser();
   const [selectedCurrency, setSelectedCurrency] = useState(currency);
   const [currencyStatus, setCurrencyStatus] = useState("");
+  const [bonusPopupOpen, setBonusPopupOpen] = useState(false);
+  const [bonusDetailsOpen, setBonusDetailsOpen] = useState(false);
+  const [bonusPending, setBonusPending] = useState(1000);
+  const [bonusStatus, setBonusStatus] = useState<"new" | "accepted" | "declined" | "completed">("new");
   useEffect(() => setSelectedCurrency(currency), [currency]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const decision = localStorage.getItem(`rockcity:bonus-decision:${user.id}`) as typeof bonusStatus | null;
+      const pending = Number(localStorage.getItem(`rockcity:bonus-pending:${user.id}`));
+      if (decision === "accepted" || decision === "declined" || decision === "completed") {
+        setBonusStatus(decision);
+        if (Number.isFinite(pending) && pending >= 0) setBonusPending(pending);
+        return;
+      }
+      setBonusPopupOpen(true);
+    } catch {
+      setBonusPopupOpen(true);
+    }
+  }, [user?.id]);
+
+  const acceptBonus = () => {
+    if (!user?.id) return;
+    setBonusStatus("accepted");
+    setBonusPending(1000);
+    setBonusPopupOpen(false);
+    try {
+      localStorage.setItem(`rockcity:bonus-decision:${user.id}`, "accepted");
+      localStorage.setItem(`rockcity:bonus-pending:${user.id}`, "1000");
+    } catch {
+      // The backend activation contract will replace this local presentation state.
+    }
+  };
+
+  const declineBonus = () => {
+    if (!user?.id) return;
+    setBonusStatus("declined");
+    setBonusPending(0);
+    setBonusPopupOpen(false);
+    try {
+      localStorage.setItem(`rockcity:bonus-decision:${user.id}`, "declined");
+      localStorage.setItem(`rockcity:bonus-pending:${user.id}`, "0");
+    } catch {
+      // Ignore storage failures and keep the current screen usable.
+    }
+  };
+
+  const optOutBonus = () => {
+    if (!user?.id) return;
+    setBonusStatus("declined");
+    setBonusPending(0);
+    setBonusDetailsOpen(false);
+    try {
+      localStorage.setItem(`rockcity:bonus-decision:${user.id}`, "declined");
+      localStorage.setItem(`rockcity:bonus-pending:${user.id}`, "0");
+    } catch {
+      // Ignore storage failures and keep the current screen usable.
+    }
+  };
+
+  const formatBonus = (value: number) => `₦${Math.max(0, Math.round(value)).toLocaleString("en-NG")}`;
+  const bonusAccepted = bonusStatus === "accepted" || bonusStatus === "completed";
+  const showCoupon = bonusAccepted && bonusPending > 0;
 
   const saveCurrency = async () => {
     setCurrencyStatus("Saving…");
@@ -40,6 +103,8 @@ export function HomePage() {
     }
   };
   const userId = user?.id;
+  const bannedUser = user as (typeof user & { bannedAt?: string | null; banReason?: string | null }) | undefined;
+  const isBanned = Boolean(bannedUser?.bannedAt);
   const { data: stats } = useGetUserStats(userId ?? 0, {
     query: { enabled: !!userId, queryKey: getGetUserStatsQueryKey(userId ?? 0) },
   });
@@ -52,11 +117,37 @@ export function HomePage() {
   const balance = Number(user?.balance ?? 0);
   const cashoutProgress = Math.min((balance / CASHOUT_TARGET) * 100, 100);
   const gamesPlayed = stats?.gamesPlayed ?? user?.gamesPlayed ?? 0;
-  const bannedUser = user as (typeof user & { bannedAt?: string | null; banReason?: string | null }) | undefined;
-  const isBanned = Boolean(bannedUser?.bannedAt);
+  const showBonusPopup = bonusPopupOpen && !isBanned;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8 pb-8 md:max-w-5xl md:space-y-10">
+    <>
+      {showBonusPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#02050a]/80 px-5 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="bonus-title">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-[#ffe56a]/70 bg-[#151729] p-7 text-center shadow-[0_0_80px_rgba(255,211,59,.42)]">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#ffe21a]/35 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-[#00d57e]/30 blur-3xl" />
+            <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-[#ffe21a] bg-gradient-to-br from-[#fff8a6] via-[#ffe21a] to-[#ff9d00] text-4xl shadow-[0_0_34px_rgba(255,226,26,.8)]">₦</div>
+            <p className="relative mt-5 text-xs font-black uppercase tracking-[0.24em] text-[#ffe971]">Welcome to Rockcity</p>
+            <h2 id="bonus-title" className="relative mt-2 text-4xl font-black leading-none text-white">Earn up to ₦1,000 bonus</h2>
+            <button type="button" onClick={acceptBonus} className="relative mt-7 w-full rounded-2xl bg-gradient-to-r from-[#ffe21a] via-[#fff27a] to-[#ffad00] px-5 py-4 text-lg font-black text-[#271900] shadow-[0_8px_0_#b86a00,0_0_26px_rgba(255,226,26,.42)] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_4px_0_#b86a00]">Accept bonus</button>
+            <button type="button" onClick={declineBonus} className="relative mt-4 text-sm font-semibold text-[#aaa9bb] hover:text-white">Maybe later</button>
+          </div>
+        </div>
+      )}
+      {bonusDetailsOpen && bonusAccepted && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#02050a]/70 px-4 pb-5 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="bonus-details-title">
+          <div className="w-full max-w-md rounded-[2rem] border border-white/15 bg-[#171827] p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffe971]">Pending bonus</p><h2 id="bonus-details-title" className="mt-2 text-2xl font-black text-white">{formatBonus(bonusPending)} remaining</h2></div>
+              <button type="button" onClick={() => setBonusDetailsOpen(false)} className="rounded-full px-3 py-1 text-2xl text-[#aaa9bb] hover:bg-white/10 hover:text-white" aria-label="Close bonus details">×</button>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-[#c7c6d4]">Your pending coupon balance is not withdrawable directly. After each verified eligible day, ₦1 moves into your main balance and this pending amount decreases by ₦1.</p>
+            <div className="mt-5 rounded-2xl bg-[#0f1020] p-4 text-sm text-[#d9d8e5]"><p>Pending now <strong className="float-right text-[#ffe971]">{formatBonus(bonusPending)}</strong></p><p className="mt-2">Daily verified addition <strong className="float-right text-[#39e36b]">₦1</strong></p></div>
+            <button type="button" onClick={optOutBonus} className="mt-5 w-full rounded-xl border border-red-400/40 px-4 py-3 text-sm font-bold text-red-200 hover:bg-red-500/10">Opt out and remove remaining coupon</button>
+          </div>
+        </div>
+      )}
+      <div className="mx-auto w-full max-w-3xl space-y-8 pb-8 md:max-w-5xl md:space-y-10">
       {isBanned && (
         <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)] md:p-6">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
@@ -81,10 +172,10 @@ export function HomePage() {
               {currencyStatus && <p className="mt-2 text-xs text-[#8ef0bd]" role="status">{currencyStatus}</p>}
             </div>
           </details>
-          <div className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white md:min-w-[200px] md:px-7 md:py-4 md:text-3xl">
-            <Ticket className="h-5 w-5 text-[#b6b4df]" />
-            <span>0</span>
-          </div>
+          <button type="button" onClick={() => bonusAccepted && setBonusDetailsOpen(true)} className={`flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white md:min-w-[200px] md:px-7 md:py-4 md:text-3xl ${bonusAccepted ? "cursor-pointer transition hover:border-[#ffe21a] hover:shadow-[0_0_26px_rgba(255,226,26,.18)]" : "cursor-default"}`} aria-label={bonusAccepted ? "Open pending bonus details" : "Pending bonus unavailable"}>
+            <Ticket className={`h-5 w-5 ${showCoupon ? "text-[#ffe21a]" : "text-[#b6b4df]"}`} />
+            <span>{showCoupon ? formatBonus(bonusPending) : "₦0"}</span>
+          </button>
         </div>
       </section>
 
@@ -134,7 +225,8 @@ export function HomePage() {
       <div className="rounded-2xl border border-white/10 bg-[#171827] px-4 py-3 text-center text-xs text-[#8f8ea1]">
         {gamesPlayed > 0 ? `${gamesPlayed} games played · Keep going to unlock more rewards` : "Play your first game to start earning rewards"}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
