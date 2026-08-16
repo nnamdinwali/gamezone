@@ -25,6 +25,12 @@ export function HomePage() {
   const [bonusDetailsOpen, setBonusDetailsOpen] = useState(false);
   const [bonusPending, setBonusPending] = useState(1000);
   const [bonusStatus, setBonusStatus] = useState<"new" | "accepted" | "declined" | "completed">("new");
+  const topTierOffer = ["USD", "GBP", "EUR", "CAD", "AUD"].includes(currency);
+  const bonusTarget = topTierOffer ? "$1" : "₦1,000";
+  const bonusDaily = topTierOffer ? "$0.01" : "₦1";
+  const formatBonus = (value: number) => topTierOffer
+    ? `$${Math.max(0, value).toFixed(2)}`
+    : `₦${Math.max(0, Math.round(value)).toLocaleString("en-NG")}`;
   useEffect(() => setSelectedCurrency(currency), [currency]);
 
   useEffect(() => {
@@ -45,12 +51,13 @@ export function HomePage() {
 
   const acceptBonus = () => {
     if (!user?.id) return;
+    const startingPending = topTierOffer ? 1 : 1000;
     setBonusStatus("accepted");
-    setBonusPending(1000);
+    setBonusPending(startingPending);
     setBonusPopupOpen(false);
     try {
       localStorage.setItem(`rockcity:bonus-decision:${user.id}`, "accepted");
-      localStorage.setItem(`rockcity:bonus-pending:${user.id}`, "1000");
+      localStorage.setItem(`rockcity:bonus-pending:${user.id}`, String(startingPending));
     } catch {
       // The backend activation contract will replace this local presentation state.
     }
@@ -82,7 +89,6 @@ export function HomePage() {
     }
   };
 
-  const formatBonus = (value: number) => `₦${Math.max(0, Math.round(value)).toLocaleString("en-NG")}`;
   const bonusAccepted = bonusStatus === "accepted" || bonusStatus === "completed";
   const showCoupon = bonusAccepted && bonusPending > 0;
 
@@ -128,7 +134,7 @@ export function HomePage() {
             <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-[#00d57e]/30 blur-3xl" />
             <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-[#ffe21a] bg-gradient-to-br from-[#fff8a6] via-[#ffe21a] to-[#ff9d00] text-4xl shadow-[0_0_34px_rgba(255,226,26,.8)]">₦</div>
             <p className="relative mt-5 text-xs font-black uppercase tracking-[0.24em] text-[#ffe971]">Welcome to Rockcity</p>
-            <h2 id="bonus-title" className="relative mt-2 text-4xl font-black leading-none text-white">Earn up to ₦1,000 bonus</h2>
+            <h2 id="bonus-title" className="relative mt-2 text-4xl font-black leading-none text-white">Earn {bonusTarget} Bonus</h2>
             <button type="button" onClick={acceptBonus} className="relative mt-7 w-full rounded-2xl bg-gradient-to-r from-[#ffe21a] via-[#fff27a] to-[#ffad00] px-5 py-4 text-lg font-black text-[#271900] shadow-[0_8px_0_#b86a00,0_0_26px_rgba(255,226,26,.42)] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_4px_0_#b86a00]">Accept bonus</button>
             <button type="button" onClick={declineBonus} className="relative mt-4 text-sm font-semibold text-[#aaa9bb] hover:text-white">Maybe later</button>
           </div>
@@ -141,8 +147,8 @@ export function HomePage() {
               <div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffe971]">Pending bonus</p><h2 id="bonus-details-title" className="mt-2 text-2xl font-black text-white">{formatBonus(bonusPending)} remaining</h2></div>
               <button type="button" onClick={() => setBonusDetailsOpen(false)} className="rounded-full px-3 py-1 text-2xl text-[#aaa9bb] hover:bg-white/10 hover:text-white" aria-label="Close bonus details">×</button>
             </div>
-            <p className="mt-4 text-sm leading-6 text-[#c7c6d4]">Your pending coupon balance is not withdrawable directly. After each verified eligible day, ₦1 moves into your main balance and this pending amount decreases by ₦1.</p>
-            <div className="mt-5 rounded-2xl bg-[#0f1020] p-4 text-sm text-[#d9d8e5]"><p>Pending now <strong className="float-right text-[#ffe971]">{formatBonus(bonusPending)}</strong></p><p className="mt-2">Daily verified addition <strong className="float-right text-[#39e36b]">₦1</strong></p></div>
+            <p className="mt-4 text-sm leading-6 text-[#c7c6d4]">Your pending coupon balance is not withdrawable directly. After each verified eligible day, {bonusDaily} moves into your main balance and this pending amount decreases by {bonusDaily}.</p>
+            <div className="mt-5 rounded-2xl bg-[#0f1020] p-4 text-sm text-[#d9d8e5]"><p>Pending now <strong className="float-right text-[#ffe971]">{formatBonus(bonusPending)}</strong></p><p className="mt-2">Daily verified addition <strong className="float-right text-[#39e36b]">{bonusDaily}</strong></p></div>
             <button type="button" onClick={optOutBonus} className="mt-5 w-full rounded-xl border border-red-400/40 px-4 py-3 text-sm font-bold text-red-200 hover:bg-red-500/10">Opt out and remove remaining coupon</button>
           </div>
         </div>
