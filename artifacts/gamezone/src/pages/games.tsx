@@ -50,28 +50,29 @@ export function GamesPage() {
                 ? gameWithLinks.gameUrl
                 : null;
             const card = (
-              <Card key={game.id} className="group flex h-full cursor-pointer flex-col overflow-hidden bg-card/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:box-glow">
-                <div className="relative h-48 overflow-hidden bg-muted">
-                  <img
-                    src={resolveGameImageUrl(game.thumbnailUrl) || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`}
-                    alt={game.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`; }}
-                  />
-                </div>
-                <CardContent className="flex flex-1 flex-col p-5">
-                  <h3 className="mb-1 line-clamp-1 font-heading text-xl font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-primary">{game.title}</h3>
-                  <p className="mb-4 line-clamp-2 flex-1 text-sm text-muted-foreground">{game.description}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-accent"><Coins className="h-4 w-4" />{game.rewardPerMinute} pts/min</div>
-                    <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground"><Users className="h-3 w-3" />{game.playCount.toLocaleString()}</div>
+              <Card key={game.id} className="group flex h-full flex-col overflow-hidden bg-card/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:box-glow">
+                <Link href={`/games/${game.id}`} className="block flex-1">
+                  <div className="relative h-48 overflow-hidden bg-muted">
+                    <img
+                      src={resolveGameImageUrl(game.thumbnailUrl) || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`}
+                      alt={game.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`; }}
+                    />
                   </div>
-                </CardContent>
+                  <CardContent className="flex flex-1 flex-col p-5">
+                    <h3 className="mb-1 line-clamp-1 font-heading text-xl font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-primary">{game.title}</h3>
+                    <p className="mb-4 line-clamp-2 flex-1 text-sm text-muted-foreground">{game.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-accent"><Coins className="h-4 w-4" />{game.rewardPerMinute} pts/min</div>
+                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground"><Users className="h-3 w-3" />{game.playCount.toLocaleString()}</div>
+                    </div>
+                  </CardContent>
+                </Link>
+                {storeUrl && <a href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)} className="mx-5 mb-5 rounded-xl bg-primary px-4 py-3 text-center font-bold text-primary-foreground transition hover:bg-primary/90">Play and Earn</a>}
               </Card>
             );
-            return storeUrl
-              ? <a key={game.id} href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)}>{card}</a>
-              : <Link key={game.id} href={`/play/${game.id}`}>{card}</Link>;
+            return card;
           })
         ) : (
           <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/30 py-20 text-center">

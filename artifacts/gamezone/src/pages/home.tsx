@@ -262,26 +262,28 @@ function OfferCard({ game, featured = false, formatCurrency, disabled = false }:
     return () => { cancelled = true; };
   }, [game.id]);
   const reward = milestoneTotal;
-  const content = (
-    <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
-      <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
-        {resolveGameImageUrl(game.thumbnailUrl) ? <img src={resolveGameImageUrl(game.thumbnailUrl)} alt="" className="h-full w-full object-cover brightness-125 contrast-110 saturate-125 transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#171827]/85 via-[#171827]/20 to-transparent" />
-      </div>
-      <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
-        <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-white`}>{game.title}</p>
-        <p className="truncate text-sm text-[#aaa9bb]">{game.description || "Install and play to earn rewards"}</p>
-        <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>{disabled ? "Earning unavailable" : `Play and Earn ${formatCurrency(reward)}`}</div>
-      </div>
-    </div>
-  );
-  if (disabled) return content;
   const storeUrl = typeof game.storeUrl === "string" && /^https?:\/\//i.test(game.storeUrl)
     ? game.storeUrl
     : typeof game.gameUrl === "string" && /^https?:\/\//i.test(game.gameUrl)
       ? game.gameUrl
       : null;
-  return storeUrl
-    ? <a href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)}>{content}</a>
-    : <Link href={`/games/${game.id}`}>{content}</Link>;
+  const detailHref = `/games/${game.id}`;
+  const content = (
+    <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
+      <Link href={detailHref} className="block">
+        <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
+          {resolveGameImageUrl(game.thumbnailUrl) ? <img src={resolveGameImageUrl(game.thumbnailUrl)} alt="" className="h-full w-full object-cover brightness-125 contrast-110 saturate-125 transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#171827]/85 via-[#171827]/20 to-transparent" />
+        </div>
+        <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
+          <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-white`}>{game.title}</p>
+          <p className="truncate text-sm text-[#aaa9bb]">{game.description || "Install and play to earn rewards"}</p>
+        </div>
+      </Link>
+      <div className={`${featured ? "px-5 pb-5" : "px-4 pb-4"}`}>
+        {disabled || !storeUrl ? <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>{disabled ? "Earning unavailable" : `View milestones · ${formatCurrency(reward)}`}</div> : <a href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)} className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} block rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>Play and Earn {formatCurrency(reward)}</a>}
+      </div>
+    </div>
+  );
+  return content;
 }
