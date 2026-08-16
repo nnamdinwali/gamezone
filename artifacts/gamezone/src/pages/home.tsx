@@ -96,8 +96,6 @@ export function HomePage() {
   };
 
   const bonusAccepted = bonusStatus === "accepted" || bonusStatus === "completed";
-  const showCoupon = BRIGHT_BONUS_ENABLED && bonusAccepted && bonusPending > 0;
-
   const saveCurrency = async () => {
     setCurrencyStatus("Saving…");
     try {
@@ -117,6 +115,9 @@ export function HomePage() {
   const userId = user?.id;
   const bannedUser = user as (typeof user & { bannedAt?: string | null; banReason?: string | null }) | undefined;
   const isBanned = Boolean(bannedUser?.bannedAt);
+  // Keep the entry visible so players know the feature exists, but never show a
+  // balance or imply that rewards are active before Bright verification is live.
+  const showCoupon = !isBanned;
   const { data: stats } = useGetUserStats(userId ?? 0, {
     query: { enabled: !!userId, queryKey: getGetUserStatsQueryKey(userId ?? 0) },
   });
@@ -146,16 +147,15 @@ export function HomePage() {
           </div>
         </div>
       )}
-      {bonusDetailsOpen && bonusAccepted && (
+      {bonusDetailsOpen && showCoupon && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#02050a]/70 px-4 pb-5 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="bonus-details-title">
           <div className="w-full max-w-md rounded-[2rem] border border-white/15 bg-[#171827] p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffe971]">Pending bonus</p><h2 id="bonus-details-title" className="mt-2 text-2xl font-black text-white">{formatBonus(bonusPending)} remaining</h2></div>
+              <div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffe971]">Rockcity bonus</p><h2 id="bonus-details-title" className="mt-2 text-2xl font-black text-white">Coming soon</h2></div>
               <button type="button" onClick={() => setBonusDetailsOpen(false)} className="rounded-full px-3 py-1 text-2xl text-[#aaa9bb] hover:bg-white/10 hover:text-white" aria-label="Close bonus details">×</button>
             </div>
-            <p className="mt-4 text-sm leading-6 text-[#c7c6d4]">Your pending coupon balance is not withdrawable directly. After each verified eligible day, {bonusDaily} moves into your main balance and this pending amount decreases by {bonusDaily}.</p>
-            <div className="mt-5 rounded-2xl bg-[#0f1020] p-4 text-sm text-[#d9d8e5]"><p>Pending now <strong className="float-right text-[#ffe971]">{formatBonus(bonusPending)}</strong></p><p className="mt-2">Daily verified addition <strong className="float-right text-[#39e36b]">{bonusDaily}</strong></p></div>
-            <button type="button" onClick={optOutBonus} className="mt-5 w-full rounded-xl border border-red-400/40 px-4 py-3 text-sm font-bold text-red-200 hover:bg-red-500/10">Opt out and remove remaining coupon</button>
+            <p className="mt-4 text-sm leading-6 text-[#c7c6d4]">The Rockcity bonus will appear here after the Bright SDK is connected and your activity can be verified. No pending balance or daily accrual is active yet.</p>
+            <div className="mt-5 rounded-2xl bg-[#0f1020] p-4 text-sm text-[#d9d8e5]"><p>Status <strong className="float-right text-[#ffe971]">Not active yet</strong></p><p className="mt-2">Balance effect <strong className="float-right text-[#aaa9bb]">None</strong></p></div>
           </div>
         </div>
       )}
@@ -185,9 +185,9 @@ export function HomePage() {
             </div>
           </details>
           {showCoupon && (
-            <button type="button" onClick={() => setBonusDetailsOpen(true)} className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white transition hover:border-[#ffe21a] hover:shadow-[0_0_26px_rgba(255,226,26,.18)] md:min-w-[200px] md:px-7 md:py-4 md:text-3xl" aria-label="Open pending bonus details">
+            <button type="button" onClick={() => setBonusDetailsOpen(true)} className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white transition hover:border-[#ffe21a] hover:shadow-[0_0_26px_rgba(255,226,26,.18)] md:min-w-[200px] md:px-7 md:py-4 md:text-3xl" aria-label="Open Rockcity bonus details">
               <Ticket className="h-5 w-5 text-[#ffe21a]" />
-              <span>{formatBonus(bonusPending)}</span>
+              <span className="text-base md:text-xl">Bonus soon</span>
             </button>
           )}
         </div>
