@@ -158,8 +158,8 @@ function OfferCard({ game, featured = false, formatCurrency, disabled = false }:
   const content = (
     <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
       <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
-        {resolveGameImageUrl(game.thumbnailUrl) ? <img src={resolveGameImageUrl(game.thumbnailUrl)} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#171827] to-transparent" />
+        {resolveGameImageUrl(game.thumbnailUrl) ? <img src={resolveGameImageUrl(game.thumbnailUrl)} alt="" className="h-full w-full object-cover brightness-125 contrast-110 saturate-125 transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#171827]/85 via-[#171827]/20 to-transparent" />
       </div>
       <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
         <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-white`}>{game.title}</p>
