@@ -10,6 +10,7 @@ import {
 import { useCurrency, useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 import { resolveGameImageUrl } from "@/lib/media";
+import { openStoreUrl } from "@/lib/store-links";
 
 const CASHOUT_TARGET = 2.5;
 const SUPPORTED_CURRENCIES = ["USD", "NGN", "GHS", "KES", "ZAR", "GBP", "CAD", "AUD", "EUR", "INR", "BRL", "MXN", "JPY", "CNY"];
@@ -274,5 +275,13 @@ function OfferCard({ game, featured = false, formatCurrency, disabled = false }:
       </div>
     </div>
   );
-  return disabled ? content : <Link href={`/games/${game.id}`}>{content}</Link>;
+  if (disabled) return content;
+  const storeUrl = typeof game.storeUrl === "string" && /^https?:\/\//i.test(game.storeUrl)
+    ? game.storeUrl
+    : typeof game.gameUrl === "string" && /^https?:\/\//i.test(game.gameUrl)
+      ? game.gameUrl
+      : null;
+  return storeUrl
+    ? <a href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)}>{content}</a>
+    : <Link href={`/games/${game.id}`}>{content}</Link>;
 }

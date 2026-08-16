@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Gamepad2, Coins, Users } from "lucide-react";
 import { useCurrentUser } from "@/lib/current-user";
 import { resolveGameImageUrl } from "@/lib/media";
+import { openStoreUrl } from "@/lib/store-links";
 
 export function GamesPage() {
   const { data: currentUser } = useCurrentUser();
@@ -41,9 +42,15 @@ export function GamesPage() {
             </Card>
           ))
         ) : activeGames.length ? (
-          activeGames.map((game) => (
-            <Link key={game.id} href={`/play/${game.id}`}>
-              <Card className="group flex h-full cursor-pointer flex-col overflow-hidden bg-card/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:box-glow">
+          activeGames.map((game) => {
+            const gameWithLinks = game as typeof game & { storeUrl?: string | null; gameUrl?: string | null };
+            const storeUrl = typeof gameWithLinks.storeUrl === "string" && /^https?:\/\//i.test(gameWithLinks.storeUrl)
+              ? gameWithLinks.storeUrl
+              : typeof gameWithLinks.gameUrl === "string" && /^https?:\/\//i.test(gameWithLinks.gameUrl)
+                ? gameWithLinks.gameUrl
+                : null;
+            const card = (
+              <Card key={game.id} className="group flex h-full cursor-pointer flex-col overflow-hidden bg-card/80 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:box-glow">
                 <div className="relative h-48 overflow-hidden bg-muted">
                   <img
                     src={resolveGameImageUrl(game.thumbnailUrl) || `https://api.dicebear.com/7.x/shapes/svg?seed=${game.id}`}
@@ -61,8 +68,11 @@ export function GamesPage() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))
+            );
+            return storeUrl
+              ? <a key={game.id} href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)}>{card}</a>
+              : <Link key={game.id} href={`/play/${game.id}`}>{card}</Link>;
+          })
         ) : (
           <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/30 py-20 text-center">
             <Gamepad2 className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />

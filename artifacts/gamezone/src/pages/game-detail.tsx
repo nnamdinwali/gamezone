@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Play, Coins, ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
 import { resolveGameImageUrl } from "@/lib/media";
+import { openStoreUrl } from "@/lib/store-links";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 type GameMilestone = { id: number; level: number; title: string; rewardAmount: number; currency: string; countryCode: string; isActive: boolean; completed?: boolean };
@@ -46,7 +47,10 @@ export function GameDetailPage() {
     const storeUrl = gameWithLinks.storeUrl || gameWithLinks.gameUrl;
 
     if (storeUrl) {
-      window.location.assign(storeUrl);
+      openStoreUrl(storeUrl);
+      if (!/Android/i.test(navigator.userAgent) || !/appgallery\.huawei\.com|appgallery\.cloud\.huawei\.com/i.test(storeUrl)) {
+        window.location.assign(storeUrl);
+      }
       return;
     }
 
