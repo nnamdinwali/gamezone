@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useManusAuth } from "@/lib/manus-auth";
 import { Link, useLocation } from "wouter";
 import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
@@ -21,7 +21,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const formatMoney = useMoney();
   const [location] = useLocation();
   const profileHref = currentUser?.id ? `/profile/${currentUser.id}` : "/profile";
-  const avatar = currentUser?.avatarUrl || sessionUser?.avatarUrl;
+  const avatar = currentUser?.avatarUrl || sessionUser?.avatarUrl || null;
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
+  useEffect(() => {
+    setFailedAvatar(null);
+  }, [avatar]);
+  const showAvatar = Boolean(avatar && avatar !== failedAvatar);
   const initials = (currentUser?.username || sessionUser?.username || "P").slice(0, 1).toUpperCase();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { data: notificationData, isLoading: notificationsLoading, isError: notificationsError, refetch: refetchNotifications, markRead } = useNotifications(Boolean(currentUser?.id));
@@ -33,7 +38,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
             <Link href={profileHref} className="flex items-center gap-3 rounded-2xl" data-testid="link-session-profile">
               <div className="h-11 w-11 overflow-hidden rounded-2xl border border-white/10 bg-[#2b2c3c]">
-                {avatar ? <img src={avatar} alt="Profile" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center font-bold text-[#d5d4df]">{initials}</div>}
+                {showAvatar ? (
+                  <img
+                    src={avatar ?? undefined}
+                    alt={`${currentUser?.username || sessionUser?.username || "Player"} profile`}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={() => setFailedAvatar(avatar)}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center font-bold text-[#d5d4df]">{initials}</div>
+                )}
               </div>
               <span className="hidden text-sm font-semibold text-white sm:block">{currentUser?.username || sessionUser?.username || "Player"}</span>
             </Link>
