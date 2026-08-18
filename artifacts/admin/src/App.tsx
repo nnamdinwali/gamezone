@@ -1,8 +1,8 @@
 import { useAdminAuth, startAdminLogin } from "./admin-auth";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Activity, Ban, BrainCircuit, ChevronRight, Gamepad2, LogOut, Search, ShieldCheck, Users, X } from "lucide-react";
+import { Activity, Ban, BrainCircuit, ChevronLeft, ChevronRight, Gamepad2, LogOut, MessageSquare, Plus, Search, Send, ShieldCheck, Users, X } from "lucide-react";
 import { adminFetch } from "./main";
-import { isOwnerOnlyObservationMode } from "./intelligence";
+import { appendIntelligenceExchange, canSendIntelligenceMessage, isOwnerOnlyObservationMode } from "./intelligence";
 
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
 type AdminGame = { id: number; title: string; genre: string; storeUrl: string; gameUrl: string; thumbnailUrl: string; playCount: number };
@@ -12,6 +12,8 @@ type SupportMessage = { id: number; userId: number; subject: string; message: st
 type ActiveSession = { id: number; userId: number; username: string; email: string; gameId: number; gameTitle: string; startedAt: string };
 type IntelligenceSummary = { generatedAt: string; ownerOnly: boolean; automaticRestrictions: boolean; users: number; activeLast24Hours: number; inactiveAtLeast12Hours: number; optedOutOfNotifications: number; reengagementRemindersCreated: number; reviewNote: string };
 type IntelligenceAnswer = { question: string; answer: string; ownerOnly: boolean; automaticRestrictions: boolean };
+type IntelligenceConversation = { id: number; title: string; createdAt: string; updatedAt: string };
+type IntelligenceChatMessage = { id: number; conversationId: number; role: "user" | "assistant"; content: string; createdAt: string };
 type AdminUser = {
   id: number;
   username: string;
@@ -59,9 +61,14 @@ export default function App() {
   const [operationPanel, setOperationPanel] = useState<"players" | "games" | "active" | "banned" | null>(null);
   const [milestoneWorkspaceOpen, setMilestoneWorkspaceOpen] = useState(false);
   const [intelligence, setIntelligence] = useState<IntelligenceSummary | null>(null);
-  const [intelligenceQuestion, setIntelligenceQuestion] = useState("Which activity signals should I review today?");
+  const [intelligenceConversations, setIntelligenceConversations] = useState<IntelligenceConversation[]>([]);
+  const [selectedIntelligenceConversationId, setSelectedIntelligenceConversationId] = useState<number | null>(null);
+  const [intelligenceMessages, setIntelligenceMessages] = useState<IntelligenceChatMessage[]>([]);
+  const [intelligenceQuestion, setIntelligenceQuestion] = useState("");
   const [intelligenceAnswer, setIntelligenceAnswer] = useState<IntelligenceAnswer | null>(null);
   const [intelligenceLoading, setIntelligenceLoading] = useState(false);
+  const [intelligenceHistoryLoading, setIntelligenceHistoryLoading] = useState(false);
+  const [intelligenceHistoryOpen, setIntelligenceHistoryOpen] = useState(true);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
@@ -96,9 +103,56 @@ export default function App() {
     }
   }, []);
 
+  const loadIntelligenceConversations = useCallback(async () => {
+    setIntelligenceHistoryLoading(true);
+    try {
+      const conversations = await adminFetch<IntelligenceConversation[]>("/api/admin/intelligence/conversations");
+      const safeConversations = Array.isArray(conversations) ? conversations : [];
+      setIntelligenceConversations(safeConversations);
+      setSelectedIntelligenceConversationId((current) => current ?? safeConversations[0]?.id ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load Intelligence history");
+    } finally {
+      setIntelligenceHistoryLoading(false);
+    }
+  }, []);
+
+  const createIntelligenceConversation = async () => {
+    try {
+      const conversation = await adminFetch<IntelligenceConversation>("/api/admin/intelligence/conversations", { method: "POST", body: JSON.stringify({ title: "New conversation" }) });
+      setIntelligenceConversations((current) => [conversation, ...current]);
+      setSelectedIntelligenceConversationId(conversation.id);
+      setIntelligenceMessages([]);
+      setIntelligenceAnswer(null);
+      setIntelligenceQuestion("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to start an Intelligence conversation");
+    }
+  };
+
+  const loadIntelligenceMessages = useCallback(async (conversationId: number) => {
+    setIntelligenceHistoryLoading(true);
+    try {
+      const payload = await adminFetch<{ conversation: IntelligenceConversation; messages: IntelligenceChatMessage[] }>(`/api/admin/intelligence/conversations/${conversationId}/messages`);
+      setIntelligenceMessages(Array.isArray(payload.messages) ? payload.messages : []);
+      setIntelligenceAnswer(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load Intelligence conversation");
+    } finally {
+      setIntelligenceHistoryLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (isSignedIn) loadAdminData();
-  }, [isSignedIn, loadAdminData]);
+    if (isSignedIn) {
+      loadAdminData();
+      loadIntelligenceConversations();
+    }
+  }, [isSignedIn, loadAdminData, loadIntelligenceConversations]);
+
+  useEffect(() => {
+    if (selectedIntelligenceConversationId && isSignedIn) void loadIntelligenceMessages(selectedIntelligenceConversationId);
+  }, [isSignedIn, selectedIntelligenceConversationId, loadIntelligenceMessages]);
 
   useEffect(() => {
     if (!selectedGameId || !isSignedIn) return;
@@ -115,6 +169,8 @@ export default function App() {
 
   if (!isLoaded) return <div className="loading">Loading admin session…</div>;
   if (!isSignedIn) return <><SignInGate />{authError && <div className="error">{authError}<button className="action" onClick={() => void reloadAuth()}>Retry</button></div>}</>;
+
+  const selectedIntelligenceConversation = intelligenceConversations.find((conversation) => conversation.id === selectedIntelligenceConversationId);
 
   const sendMessage = async () => {
     const userId = Number(messageUserId);
@@ -138,12 +194,16 @@ export default function App() {
 
   const askIntelligence = async () => {
     const question = intelligenceQuestion.trim();
-    if (!question) return;
+    if (!question || !selectedIntelligenceConversationId) return;
     setIntelligenceLoading(true);
     setError("");
     try {
-      const answer = await adminFetch<IntelligenceAnswer>("/api/admin/intelligence/ask", { method: "POST", body: JSON.stringify({ question }) });
+      const answer = await adminFetch<IntelligenceAnswer>(`/api/admin/intelligence/conversations/${selectedIntelligenceConversationId}/messages`, { method: "POST", body: JSON.stringify({ question }) });
+      const now = new Date().toISOString();
+      setIntelligenceMessages((current) => appendIntelligenceExchange(current, question, answer.answer, (role, content) => ({ id: Date.now() + Math.random(), conversationId: selectedIntelligenceConversationId, role, content, createdAt: now })));
       setIntelligenceAnswer(answer);
+      setIntelligenceQuestion("");
+      await loadIntelligenceConversations();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to ask Rockcity Intelligence");
     } finally {
@@ -272,8 +332,19 @@ export default function App() {
           <div className="intelligence-body">
             <div className="intelligence-banner"><div className="intelligence-icon"><BrainCircuit /></div><div><strong>Quiet monitoring for owner review</strong><p>{intelligence?.reviewNote || "Loading activity observations from the Rockcity backend."}</p></div></div>
             <div className="intelligence-metrics"><Metric icon={<Users />} label="Players tracked" value={intelligence?.users ?? "—"} onClick={() => {}} /><Metric icon={<Activity />} label="Active in 24 hours" value={intelligence?.activeLast24Hours ?? "—"} onClick={() => {}} /><Metric icon={<Search />} label="Inactive 12+ hours" value={intelligence?.inactiveAtLeast12Hours ?? "—"} onClick={() => {}} /><Metric icon={<ShieldCheck />} label="Reminders created" value={intelligence?.reengagementRemindersCreated ?? "—"} onClick={() => {}} /></div>
-            <div className="intelligence-question"><label htmlFor="intelligence-question">Ask about player activity</label><div className="question-row"><textarea id="intelligence-question" value={intelligenceQuestion} maxLength={1200} onChange={(event) => setIntelligenceQuestion(event.target.value)} /><button className="refresh" onClick={() => void askIntelligence()} disabled={intelligenceLoading}>{intelligenceLoading ? "Analysing…" : "Ask Intelligence"}</button></div></div>
-            {intelligenceAnswer && <div className="intelligence-answer"><span>Answer to: {intelligenceAnswer.question}</span><p>{intelligenceAnswer.answer}</p><small>Owner-only observation. Automatic bans, restrictions, payout holds, and balance changes are disabled.</small></div>}
+            <div className="intelligence-chat-shell">
+              <aside className={`intelligence-history ${intelligenceHistoryOpen ? "is-open" : "is-collapsed"}`} aria-label="Intelligence conversations">
+                <div className="intelligence-history-head"><strong>Conversations</strong><button className="icon-button" onClick={() => void createIntelligenceConversation()} aria-label="Start a new conversation"><Plus size={16} /></button></div>
+                {intelligenceHistoryOpen && <div className="intelligence-history-list">{intelligenceHistoryLoading && !intelligenceConversations.length ? <span className="empty">Loading history…</span> : intelligenceConversations.length ? intelligenceConversations.map((conversation) => <button className={`intelligence-history-item ${conversation.id === selectedIntelligenceConversationId ? "selected" : ""}`} key={conversation.id} onClick={() => setSelectedIntelligenceConversationId(conversation.id)}><MessageSquare size={15} /><span>{conversation.title}</span></button>) : <span className="empty">No conversations yet.</span>}</div>}
+                <button className="intelligence-history-toggle" onClick={() => setIntelligenceHistoryOpen((open) => !open)}>{intelligenceHistoryOpen ? <><ChevronLeft size={14} /> Hide history</> : <><ChevronRight size={14} /> Show history</>}</button>
+              </aside>
+              <div className="intelligence-chat-main">
+                <div className="intelligence-chat-head"><div><span className="eyebrow">AI ASSISTANT</span><strong>{selectedIntelligenceConversation?.title || "Start a conversation"}</strong></div><button className="refresh compact-refresh" onClick={() => void createIntelligenceConversation()}><Plus size={15} /> New chat</button></div>
+                <div className="intelligence-messages" aria-live="polite">{intelligenceMessages.length ? intelligenceMessages.map((message) => <article className={`intelligence-message ${message.role}`} key={message.id}><span>{message.role === "assistant" ? "Rockcity Intelligence" : "You"}</span><p>{message.content}</p></article>) : <div className="intelligence-empty-chat"><BrainCircuit size={28} /><strong>Ask anything about Rockcity activity</strong><p>Try: “Which players have unusual activity this week?” or “Summarise inactive users and what I should review.”</p></div>}</div>
+                <div className="intelligence-composer"><textarea id="intelligence-question" aria-label="Ask Rockcity Intelligence" placeholder="Describe the task or ask a question" value={intelligenceQuestion} maxLength={1200} onChange={(event) => setIntelligenceQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void askIntelligence(); } }} /><div className="intelligence-composer-foot"><small>Enter to send · Shift+Enter for a new line</small><button className="send-button" onClick={() => void askIntelligence()} disabled={!canSendIntelligenceMessage(intelligenceQuestion, selectedIntelligenceConversationId, intelligenceLoading)} aria-label="Send question">{intelligenceLoading ? "…" : <Send size={16} />}</button></div></div>
+              </div>
+            </div>
+            {intelligenceAnswer && <div className="intelligence-answer"><span>Latest analysis</span><p>{intelligenceAnswer.answer}</p><small>Owner-only observation. Automatic bans, restrictions, payout holds, and balance changes are disabled.</small></div>}
           </div>
         </section>
         {operationPanel && <section className="detail-panel panel"><div className="panel-title"><div><p className="eyebrow">PLATFORM DETAIL</p><h2>{operationPanel === "players" ? "Registered players" : operationPanel === "games" ? "Uploaded games" : operationPanel === "active" ? "Active sessions" : "Banned accounts"}</h2></div><button className="icon-button" onClick={() => setOperationPanel(null)} aria-label="Close detail"><X size={18} /></button></div>{operationPanel === "active" ? <div className="compact-list">{activeSessions.length ? activeSessions.map((session) => <article className="compact-row" key={session.id}><div><strong>{session.username}</strong><small>{session.email} · {session.gameTitle}</small></div><span>Started {new Date(session.startedAt).toLocaleString()}</span></article>) : <p className="empty">No users are currently playing.</p>}</div> : operationPanel === "games" ? <div className="compact-list">{games.length ? games.map((game) => <article className="compact-row" key={game.id}><div><strong>{game.title}</strong><small>{game.genre} · {game.storeUrl || "No Store URL"}</small></div><button className="action ban" onClick={() => void deleteGame(game)}>Delete</button></article>) : <p className="empty">No uploaded games yet.</p>}</div> : <div className="compact-list">{visibleUsers.length ? visibleUsers.map((account) => <article className="compact-row" key={account.id}><div><strong>{account.username}</strong><small>{account.email} · {account.countryCode || "Country not set"}</small></div>{account.bannedAt ? <button className="action unban" onClick={() => void unbanUser(account.id)}>Unban</button> : <button className="action ban" onClick={() => void banUser(account.id)}>Ban</button>}</article>) : <p className="empty">No accounts in this view.</p>}</div>}</section>}
