@@ -1,7 +1,8 @@
 import { useAdminAuth, startAdminLogin } from "./admin-auth";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Activity, Ban, ChevronRight, Gamepad2, LogOut, ShieldCheck, Users, X } from "lucide-react";
+import { Activity, Ban, BrainCircuit, ChevronRight, Gamepad2, LogOut, Search, ShieldCheck, Users, X } from "lucide-react";
 import { adminFetch } from "./main";
+import { isOwnerOnlyObservationMode } from "./intelligence";
 
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
 type AdminGame = { id: number; title: string; genre: string; storeUrl: string; gameUrl: string; thumbnailUrl: string; playCount: number };
@@ -9,6 +10,8 @@ type Milestone = { id: number; level: number; title: string; objectiveType: "lev
 type Withdrawal = { id: number; userId: number; amount: number; currencyCode: string; status: string; reviewNote: string | null; createdAt: string; user: { username: string; email: string; countryCode: string | null }; payoutProfile: { method: string; label: string; maskedDetails: string; details: Record<string, string> } };
 type SupportMessage = { id: number; userId: number; subject: string; message: string; status: string; createdAt: string; readAt: string | null; user?: { username: string; email: string; countryCode: string | null } };
 type ActiveSession = { id: number; userId: number; username: string; email: string; gameId: number; gameTitle: string; startedAt: string };
+type IntelligenceSummary = { generatedAt: string; ownerOnly: boolean; automaticRestrictions: boolean; users: number; activeLast24Hours: number; inactiveAtLeast12Hours: number; optedOutOfNotifications: number; reengagementRemindersCreated: number; reviewNote: string };
+type IntelligenceAnswer = { question: string; answer: string; ownerOnly: boolean; automaticRestrictions: boolean };
 type AdminUser = {
   id: number;
   username: string;
@@ -55,18 +58,23 @@ export default function App() {
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [operationPanel, setOperationPanel] = useState<"players" | "games" | "active" | "banned" | null>(null);
   const [milestoneWorkspaceOpen, setMilestoneWorkspaceOpen] = useState(false);
+  const [intelligence, setIntelligence] = useState<IntelligenceSummary | null>(null);
+  const [intelligenceQuestion, setIntelligenceQuestion] = useState("Which activity signals should I review today?");
+  const [intelligenceAnswer, setIntelligenceAnswer] = useState<IntelligenceAnswer | null>(null);
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [nextOverview, nextUsers, nextGames, nextWithdrawals, nextSupport, nextActiveSessions] = await Promise.all([
+      const [nextOverview, nextUsers, nextGames, nextWithdrawals, nextSupport, nextActiveSessions, nextIntelligence] = await Promise.all([
         adminFetch<Overview>("/api/admin/overview"),
         adminFetch<AdminUser[]>("/api/admin/users"),
         adminFetch<AdminGame[]>("/api/games"),
         adminFetch<Withdrawal[]>("/api/admin/withdrawals"),
         adminFetch<{ messages: SupportMessage[] }>("/api/admin/support/messages"),
         adminFetch<ActiveSession[]>("/api/admin/active-sessions"),
+        adminFetch<IntelligenceSummary>("/api/admin/intelligence/summary"),
       ]);
       setOverview(nextOverview);
       const safeUsers = Array.isArray(nextUsers) ? nextUsers : [];
@@ -79,6 +87,7 @@ export default function App() {
       setWithdrawals(safeWithdrawals);
       setSupportMessages(safeSupportMessages);
       setActiveSessions(safeActiveSessions);
+      setIntelligence(nextIntelligence);
       setSelectedGameId((current) => current ?? safeGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
@@ -124,6 +133,21 @@ export default function App() {
       setMessageStatus("Message sent. It will appear in the selected user’s bell.");
     } catch (err) {
       setMessageStatus(err instanceof Error ? err.message : "Unable to send message");
+    }
+  };
+
+  const askIntelligence = async () => {
+    const question = intelligenceQuestion.trim();
+    if (!question) return;
+    setIntelligenceLoading(true);
+    setError("");
+    try {
+      const answer = await adminFetch<IntelligenceAnswer>("/api/admin/intelligence/ask", { method: "POST", body: JSON.stringify({ question }) });
+      setIntelligenceAnswer(answer);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to ask Rockcity Intelligence");
+    } finally {
+      setIntelligenceLoading(false);
     }
   };
 
@@ -243,6 +267,15 @@ export default function App() {
           <Metric icon={<Activity />} label="Active sessions" value={overview?.activeSessions ?? "—"} onClick={() => setOperationPanel("active")} />
           <Metric icon={<Ban />} label="Banned accounts" value={overview?.bannedUsers ?? "—"} onClick={() => setOperationPanel("banned")} />
         </section>
+        <section id="intelligence" className="panel intelligence-panel">
+          <div className="panel-title"><div><p className="eyebrow">OWNER-ONLY INTELLIGENCE</p><h2><BrainCircuit size={22} /> Rockcity Intelligence</h2></div><span>{isOwnerOnlyObservationMode(intelligence) ? "Observation mode" : "Loading signals…"}</span></div>
+          <div className="intelligence-body">
+            <div className="intelligence-banner"><div className="intelligence-icon"><BrainCircuit /></div><div><strong>Quiet monitoring for owner review</strong><p>{intelligence?.reviewNote || "Loading activity observations from the Rockcity backend."}</p></div></div>
+            <div className="intelligence-metrics"><Metric icon={<Users />} label="Players tracked" value={intelligence?.users ?? "—"} onClick={() => {}} /><Metric icon={<Activity />} label="Active in 24 hours" value={intelligence?.activeLast24Hours ?? "—"} onClick={() => {}} /><Metric icon={<Search />} label="Inactive 12+ hours" value={intelligence?.inactiveAtLeast12Hours ?? "—"} onClick={() => {}} /><Metric icon={<ShieldCheck />} label="Reminders created" value={intelligence?.reengagementRemindersCreated ?? "—"} onClick={() => {}} /></div>
+            <div className="intelligence-question"><label htmlFor="intelligence-question">Ask about player activity</label><div className="question-row"><textarea id="intelligence-question" value={intelligenceQuestion} maxLength={1200} onChange={(event) => setIntelligenceQuestion(event.target.value)} /><button className="refresh" onClick={() => void askIntelligence()} disabled={intelligenceLoading}>{intelligenceLoading ? "Analysing…" : "Ask Intelligence"}</button></div></div>
+            {intelligenceAnswer && <div className="intelligence-answer"><span>Answer to: {intelligenceAnswer.question}</span><p>{intelligenceAnswer.answer}</p><small>Owner-only observation. Automatic bans, restrictions, payout holds, and balance changes are disabled.</small></div>}
+          </div>
+        </section>
         {operationPanel && <section className="detail-panel panel"><div className="panel-title"><div><p className="eyebrow">PLATFORM DETAIL</p><h2>{operationPanel === "players" ? "Registered players" : operationPanel === "games" ? "Uploaded games" : operationPanel === "active" ? "Active sessions" : "Banned accounts"}</h2></div><button className="icon-button" onClick={() => setOperationPanel(null)} aria-label="Close detail"><X size={18} /></button></div>{operationPanel === "active" ? <div className="compact-list">{activeSessions.length ? activeSessions.map((session) => <article className="compact-row" key={session.id}><div><strong>{session.username}</strong><small>{session.email} · {session.gameTitle}</small></div><span>Started {new Date(session.startedAt).toLocaleString()}</span></article>) : <p className="empty">No users are currently playing.</p>}</div> : operationPanel === "games" ? <div className="compact-list">{games.length ? games.map((game) => <article className="compact-row" key={game.id}><div><strong>{game.title}</strong><small>{game.genre} · {game.storeUrl || "No Store URL"}</small></div><button className="action ban" onClick={() => void deleteGame(game)}>Delete</button></article>) : <p className="empty">No uploaded games yet.</p>}</div> : <div className="compact-list">{visibleUsers.length ? visibleUsers.map((account) => <article className="compact-row" key={account.id}><div><strong>{account.username}</strong><small>{account.email} · {account.countryCode || "Country not set"}</small></div>{account.bannedAt ? <button className="action unban" onClick={() => void unbanUser(account.id)}>Unban</button> : <button className="action ban" onClick={() => void banUser(account.id)}>Ban</button>}</article>) : <p className="empty">No accounts in this view.</p>}</div>}</section>}
         <section id="offer-management" className="panel game-panel">
           <div className="panel-title"><div><p className="eyebrow">OFFER MANAGEMENT</p><h2>Upload a game offer</h2></div><span>Store-link APK flow</span></div>
@@ -262,7 +295,7 @@ export default function App() {
           {messageStatus && <div className={messageStatus.startsWith("Message sent") ? "success" : "error"}>{messageStatus}</div>}
         </section>
         <section id="support-inbox" className="panel"><div className="panel-title"><div><p className="eyebrow">PLAYER SUPPORT</p><h2>Support inbox</h2></div><span>{supportMessages.filter((message) => message.status === "open").length} open</span></div><p className="helper">Players send messages from their profile. Read them here, then reply using the existing Message a user notification form above.</p><div className="withdrawal-list">{supportMessages.length ? supportMessages.map((message) => <article className="withdrawal-card" key={message.id}><div><strong>{message.subject}</strong><small>{message.user?.username || "Player"} · {message.user?.email || ""} · {new Date(message.createdAt).toLocaleString()}</small><p>{message.message}</p><small>Status: {message.status}</small></div><div className="withdrawal-actions">{message.status === "open" && <button className="refresh" onClick={() => void markSupportRead(message.id)}>Mark read</button>}{message.status !== "closed" && <button className="action" onClick={() => { setMessageUserId(String(message.userId)); setMessageTitle(`Re: ${message.subject}`); document.getElementById("user-communication")?.scrollIntoView({ behavior: "smooth" }); }}>Reply above</button>}</div></article>) : <p className="empty">No player support messages yet.</p>}</div></section>
-        <section className="next"><h2>Admin modules</h2><div><a className="module-link" href="#offer-management">Game uploads and store links</a><a className="module-link" href="#reward-management">Milestone reward schedules</a><a className="module-link" href="#wallet-review">Wallet and payout review</a><a className="module-link module-placeholder-link" href="#audit-log">Audit log <small>Coming soon</small></a></div></section>
+        <section className="next"><h2>Admin modules</h2><div><a className="module-link" href="#intelligence">Rockcity Intelligence</a><a className="module-link" href="#offer-management">Game uploads and store links</a><a className="module-link" href="#reward-management">Milestone reward schedules</a><a className="module-link" href="#wallet-review">Wallet and payout review</a><a className="module-link module-placeholder-link" href="#audit-log">Audit log <small>Coming soon</small></a></div></section>
         <section id="wallet-review" className="panel"><div className="panel-title"><div><p className="eyebrow">WALLET AND PAYOUT REVIEW</p><h2>Manual withdrawal queue</h2></div><span>{withdrawals.length} requests</span></div><p className="helper">Review each request, manually send the payout outside Rockcity, then mark it paid. Rockcity never sends funds automatically.</p><div className="withdrawal-list">{withdrawals.length ? withdrawals.map((item) => <article className="withdrawal-card" key={item.id}><div><strong>{item.user.username}</strong><small>{item.user.email} · {item.user.countryCode || "Country not set"}</small><p><strong>{item.currencyCode} {Number(item.amount).toFixed(2)}</strong> · {item.payoutProfile.method} · {item.payoutProfile.maskedDetails}</p><div className="payout-details"><small>Account details for manual payout:</small>{Object.entries(item.payoutProfile.details || {}).filter(([, value]) => value).map(([key, value]) => <span key={key}><b>{key.replace(/([A-Z])/g, " $1")}: </b>{value}</span>)}</div><small>{new Date(item.createdAt).toLocaleString()} · {item.status}</small></div><div className="withdrawal-actions">{item.status === "pending" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "approved")}>Approve</button>}{item.status === "approved" && <button className="refresh" onClick={() => void updateWithdrawalStatus(item.id, "paid")}>Mark paid</button>}{["pending", "approved"].includes(item.status) && <><button className="action" onClick={() => void updateWithdrawalStatus(item.id, "needs_correction")}>Needs correction</button><button className="action ban" onClick={() => void updateWithdrawalStatus(item.id, "rejected")}>Reject</button></>}</div></article>) : <p className="empty">No withdrawal requests yet.</p>}</div></section>
         <section id="audit-log" className="panel module-placeholder"><p className="eyebrow">AUDIT LOG</p><h2>Audit log module</h2><p>This admin destination is reserved for immutable activity history. It is not active yet.</p></section>
       </main>

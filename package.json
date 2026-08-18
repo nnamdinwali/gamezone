@@ -10,10 +10,14 @@
   },
   "private": true,
   "pnpm": {
-    "onlyBuiltDependencies": ["@clerk/shared", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "esbuild"
+    ]
   },
   "devDependencies": {
     "prettier": "^3.9.6",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.10"
   }
 }
