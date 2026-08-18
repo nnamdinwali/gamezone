@@ -6,6 +6,7 @@ import { appendIntelligenceExchange, canSendIntelligenceMessage, isOwnerOnlyObse
 
 type Overview = { users: number; games: number; activeSessions: number; bannedUsers: number };
 type AdminGame = { id: number; title: string; genre: string; storeUrl: string; gameUrl: string; thumbnailUrl: string; playCount: number };
+type AuditArtifact = { id: number; gameId: number; artifactType: string; label: string; sourceUrl: string | null; mimeType: string | null; byteSize: number | null; scanStatus: "registered" | "scanned" | "unsupported" | "failed"; scanEvidence?: { scannedBytes?: number; truncated?: boolean; detectedFormats?: string[]; adSignals?: string[]; progressionSignals?: string[]; placementHints?: string[]; warnings?: string[] } | null; scannedAt: string | null };
 type Milestone = { id: number; level: number; title: string; objectiveType: "level" | "unlock" | "merge" | "stage" | "custom"; rewardAmount: number; currency: string; countryCode: string; isActive: boolean };
 type Withdrawal = { id: number; userId: number; amount: number; currencyCode: string; status: string; reviewNote: string | null; createdAt: string; user: { username: string; email: string; countryCode: string | null }; payoutProfile: { method: string; label: string; maskedDetails: string; details: Record<string, string> } };
 type SupportMessage = { id: number; userId: number; subject: string; message: string; status: string; createdAt: string; readAt: string | null; user?: { username: string; email: string; countryCode: string | null } };
@@ -64,12 +65,17 @@ export default function App() {
   const [intelligence, setIntelligence] = useState<IntelligenceSummary | null>(null);
   const [intelligenceConversations, setIntelligenceConversations] = useState<IntelligenceConversation[]>([]);
   const [selectedIntelligenceConversationId, setSelectedIntelligenceConversationId] = useState<number | null>(null);
+  const [selectedAuditGameId, setSelectedAuditGameId] = useState<number | null>(null);
   const [intelligenceMessages, setIntelligenceMessages] = useState<IntelligenceChatMessage[]>([]);
   const [intelligenceQuestion, setIntelligenceQuestion] = useState("");
   const [intelligenceAnswer, setIntelligenceAnswer] = useState<IntelligenceAnswer | null>(null);
   const [intelligenceLoading, setIntelligenceLoading] = useState(false);
   const [intelligenceHistoryLoading, setIntelligenceHistoryLoading] = useState(false);
   const [intelligenceHistoryOpen, setIntelligenceHistoryOpen] = useState(true);
+  const [auditArtifacts, setAuditArtifacts] = useState<AuditArtifact[]>([]);
+  const [auditArtifactFile, setAuditArtifactFile] = useState<File | null>(null);
+  const [auditArtifactLabel, setAuditArtifactLabel] = useState("");
+  const [auditArtifactLoading, setAuditArtifactLoading] = useState(false);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
@@ -97,6 +103,7 @@ export default function App() {
       setActiveSessions(safeActiveSessions);
       setIntelligence(nextIntelligence);
       setSelectedGameId((current) => current ?? safeGames[0]?.id ?? null);
+      setSelectedAuditGameId((current) => current ?? safeGames[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load admin data");
     } finally {
@@ -168,10 +175,51 @@ export default function App() {
       });
   }, [isSignedIn, selectedGameId]);
 
+  useEffect(() => {
+    if (!selectedAuditGameId || !isSignedIn) { setAuditArtifacts([]); return; }
+    adminFetch<AuditArtifact[]>(`/api/admin/intelligence/games/${selectedAuditGameId}/artifacts`)
+      .then((payload) => setAuditArtifacts(Array.isArray(payload) ? payload : []))
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load audit artifacts"));
+  }, [isSignedIn, selectedAuditGameId]);
+
   if (!isLoaded) return <div className="loading">Loading admin session…</div>;
   if (!isSignedIn) return <><SignInGate />{authError && <div className="error">{authError}<button className="action" onClick={() => void reloadAuth()}>Retry</button></div>}</>;
 
   const selectedIntelligenceConversation = intelligenceConversations.find((conversation) => conversation.id === selectedIntelligenceConversationId);
+
+  const uploadAuditArtifact = async () => {
+    if (!selectedAuditGameId || !auditArtifactFile) return;
+    setAuditArtifactLoading(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("artifact", auditArtifactFile);
+      form.append("artifactType", "source");
+      form.append("label", auditArtifactLabel.trim() || auditArtifactFile.name);
+      const created = await adminFetch<AuditArtifact>(`/api/admin/intelligence/games/${selectedAuditGameId}/artifacts`, { method: "POST", body: form });
+      setAuditArtifacts((current) => [created, ...current]);
+      setAuditArtifactFile(null);
+      setAuditArtifactLabel("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to upload audit artifact");
+    } finally {
+      setAuditArtifactLoading(false);
+    }
+  };
+
+  const scanAuditArtifact = async (artifact: AuditArtifact) => {
+    if (!selectedAuditGameId) return;
+    setAuditArtifactLoading(true);
+    setError("");
+    try {
+      const result = await adminFetch<{ status: AuditArtifact["scanStatus"]; evidence: AuditArtifact["scanEvidence"] }>(`/api/admin/intelligence/games/${selectedAuditGameId}/artifacts/${artifact.id}/scan`, { method: "POST" });
+      setAuditArtifacts((current) => current.map((item) => item.id === artifact.id ? { ...item, scanStatus: result.status, scanEvidence: result.evidence, scannedAt: new Date().toISOString() } : item));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to scan audit artifact");
+    } finally {
+      setAuditArtifactLoading(false);
+    }
+  };
 
   const sendMessage = async () => {
     const userId = Number(messageUserId);
@@ -199,7 +247,7 @@ export default function App() {
     setIntelligenceLoading(true);
     setError("");
     try {
-      const answer = await adminFetch<IntelligenceAnswer>(`/api/admin/intelligence/conversations/${selectedIntelligenceConversationId}/messages`, { method: "POST", body: JSON.stringify({ question }) });
+      const answer = await adminFetch<IntelligenceAnswer>(`/api/admin/intelligence/conversations/${selectedIntelligenceConversationId}/messages`, { method: "POST", body: JSON.stringify({ question, gameId: selectedAuditGameId ?? undefined }) });
       const now = new Date().toISOString();
       setIntelligenceMessages((current) => appendIntelligenceExchange(current, question, answer.answer, (role, content) => ({ id: Date.now() + Math.random(), conversationId: selectedIntelligenceConversationId, role, content, createdAt: now })));
       setIntelligenceAnswer(answer);
@@ -334,6 +382,7 @@ export default function App() {
             <div className="intelligence-banner"><div className="intelligence-icon"><BrainCircuit /></div><div><strong>Quiet monitoring for owner review</strong><p>{intelligence?.reviewNote || "Loading activity observations from the Rockcity backend."}</p></div></div>
             <div className="intelligence-metrics"><Metric icon={<Users />} label="Players tracked" value={intelligence?.users ?? "—"} onClick={() => {}} /><Metric icon={<Activity />} label="Active in 24 hours" value={intelligence?.activeLast24Hours ?? "—"} onClick={() => {}} /><Metric icon={<Search />} label="Inactive 12+ hours" value={intelligence?.inactiveAtLeast12Hours ?? "—"} onClick={() => {}} /><Metric icon={<ShieldCheck />} label="Reminders created" value={intelligence?.reengagementRemindersCreated ?? "—"} onClick={() => {}} /></div>
             <div className="intelligence-signals"><div className="intelligence-signals-head"><div><span className="eyebrow">EVIDENCE QUEUE</span><strong>Signals for owner review</strong></div><span>{intelligence?.signals?.length ?? 0} observations</span></div>{intelligence?.signals?.length ? <div className="intelligence-signal-list">{intelligence.signals.slice(0, 12).map((signal, index) => <article className={`intelligence-signal ${signal.severity}`} key={`${signal.code}-${signal.subject}-${index}`}><div><strong>{signal.subject}</strong><small>{signal.code.replaceAll("-", " ")} · {signal.confidence} confidence</small></div><p>{signal.evidence}</p><span>Owner review</span></article>)}</div> : <p className="empty">No deterministic observations require review right now.</p>}</div>
+            <div className="intelligence-signals artifact-workspace"><div className="intelligence-signals-head"><div><span className="eyebrow">AUTHORIZED ARTIFACTS</span><strong>Inspect source or manifests</strong><small>Bounded text inspection only. APK/IPA binaries are not executed or treated as scanned.</small></div><span>{auditArtifacts.length} registered</span></div><div className="artifact-upload-row"><select aria-label="Artifact game" value={selectedAuditGameId ?? ""} onChange={(event) => setSelectedAuditGameId(event.target.value ? Number(event.target.value) : null)}><option value="">Select a game</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title}</option>)}</select><input aria-label="Artifact label" placeholder="Artifact label" value={auditArtifactLabel} onChange={(event) => setAuditArtifactLabel(event.target.value)} /><input aria-label="Artifact file" type="file" accept=".json,.js,.ts,.tsx,.jsx,.xml,.yaml,.yml,.gradle,.properties,.txt,.html,.css,.kt,.java,.cs,.md,application/json,text/plain" onChange={(event) => setAuditArtifactFile(event.target.files?.[0] ?? null)} /><button className="refresh" onClick={() => void uploadAuditArtifact()} disabled={!selectedAuditGameId || !auditArtifactFile || auditArtifactLoading}>{auditArtifactLoading ? "Working…" : "Upload artifact"}</button></div>{auditArtifacts.length ? <div className="intelligence-signal-list">{auditArtifacts.map((artifact) => { const evidence = artifact.scanEvidence; return <article className="intelligence-signal" key={artifact.id}><div><strong>{artifact.label}</strong><small>{artifact.scanStatus} · {artifact.mimeType || "source URL"}{artifact.scannedAt ? ` · ${new Date(artifact.scannedAt).toLocaleString()}` : ""}</small></div>{evidence ? <p>{[evidence.detectedFormats?.length ? `Formats: ${evidence.detectedFormats.join(", ")}` : "", evidence.adSignals?.length ? `Ads: ${evidence.adSignals.join(" | ")}` : "", evidence.placementHints?.length ? `Placement hints: ${evidence.placementHints.join(" | ")}` : "", evidence.progressionSignals?.length ? `Progression: ${evidence.progressionSignals.join(" | ")}` : "", ...(evidence.warnings || [])].filter(Boolean).join("\n") || "No supported signals found in the inspected text."}</p> : <p>Not scanned yet. Start a bounded inspection to produce evidence.</p>}<div className="artifact-actions"><button className="action" onClick={() => void scanAuditArtifact(artifact)} disabled={auditArtifactLoading || artifact.scanStatus === "scanned"}>Scan text</button><span>Owner review only · no automatic enforcement</span></div></article>; })}</div> : <p className="empty">No artifacts supplied for this game.</p>}</div>
             <div className="intelligence-chat-shell">
               <aside className={`intelligence-history ${intelligenceHistoryOpen ? "is-open" : "is-collapsed"}`} aria-label="Intelligence conversations">
                 <div className="intelligence-history-head"><strong>Conversations</strong><button className="icon-button" onClick={() => void createIntelligenceConversation()} aria-label="Start a new conversation"><Plus size={16} /></button></div>
@@ -343,7 +392,7 @@ export default function App() {
               <div className="intelligence-chat-main">
                 <div className="intelligence-chat-head"><div><span className="eyebrow">AI ASSISTANT</span><strong>{selectedIntelligenceConversation?.title || "Start a conversation"}</strong></div><button className="refresh compact-refresh" onClick={() => void createIntelligenceConversation()}><Plus size={15} /> New chat</button></div>
                 <div className="intelligence-messages" aria-live="polite">{intelligenceMessages.length ? intelligenceMessages.map((message) => <article className={`intelligence-message ${message.role}`} key={message.id}><span>{message.role === "assistant" ? "Rockcity Intelligence" : "You"}</span><p>{message.content}</p></article>) : <div className="intelligence-empty-chat"><BrainCircuit size={28} /><strong>Ask anything about Rockcity activity</strong><p>Try: “Which players have unusual activity this week?” or “Summarise inactive users and what I should review.”</p></div>}</div>
-                <div className="intelligence-composer"><textarea id="intelligence-question" aria-label="Ask Rockcity Intelligence" placeholder="Describe the task or ask a question" value={intelligenceQuestion} maxLength={1200} onChange={(event) => setIntelligenceQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void askIntelligence(); } }} /><div className="intelligence-composer-foot"><small>Enter to send · Shift+Enter for a new line</small><button className="send-button" onClick={() => void askIntelligence()} disabled={!canSendIntelligenceMessage(intelligenceQuestion, selectedIntelligenceConversationId, intelligenceLoading)} aria-label="Send question">{intelligenceLoading ? "…" : <Send size={16} />}</button></div></div>
+                <div className="intelligence-composer"><label className="intelligence-audit-context">Audit context<select aria-label="Game audit context" value={selectedAuditGameId ?? ""} onChange={(event) => setSelectedAuditGameId(event.target.value ? Number(event.target.value) : null)}><option value="">All Rockcity platform data</option>{games.map((game) => <option key={game.id} value={game.id}>{game.title} · metadata and registered artifacts</option>)}</select></label><textarea id="intelligence-question" aria-label="Ask Rockcity Intelligence" placeholder="Describe the task or ask a question" value={intelligenceQuestion} maxLength={1200} onChange={(event) => setIntelligenceQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void askIntelligence(); } }} /><div className="intelligence-composer-foot"><small>Enter to send · Shift+Enter for a new line</small><button className="send-button" onClick={() => void askIntelligence()} disabled={!canSendIntelligenceMessage(intelligenceQuestion, selectedIntelligenceConversationId, intelligenceLoading)} aria-label="Send question">{intelligenceLoading ? "…" : <Send size={16} />}</button></div></div>
               </div>
             </div>
             {intelligenceAnswer && <div className="intelligence-answer"><span>Latest analysis</span><p>{intelligenceAnswer.answer}</p><small>Owner-only observation. Automatic bans, restrictions, payout holds, and balance changes are disabled.</small></div>}
