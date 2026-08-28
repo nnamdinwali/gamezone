@@ -12,7 +12,13 @@ import { useCurrentUser } from "@/lib/current-user";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
 
-const CASHOUT_TARGET = 2.5;
+export const CASHOUT_TARGET = 2.5;
+
+/** Return the percentage of the unchanged cashout target reached by a base-currency balance. */
+export function cashoutProgressForBalance(balance: number): number {
+  if (!Number.isFinite(balance) || balance <= 0) return 0;
+  return Math.min((balance / CASHOUT_TARGET) * 100, 100);
+}
 const SUPPORTED_CURRENCIES = ["USD", "NGN", "GHS", "KES", "ZAR", "GBP", "CAD", "AUD", "EUR", "INR", "BRL", "MXN", "JPY", "CNY"];
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 // Bright remains intentionally inactive until the native SDK and server verification contract are connected.
@@ -129,7 +135,7 @@ export function HomePage() {
   const featured = games[0];
   const offers = games.slice(1, 5);
   const balance = Number(user?.balance ?? 0);
-  const cashoutProgress = Math.min((balance / CASHOUT_TARGET) * 100, 100);
+  const cashoutProgress = cashoutProgressForBalance(balance);
   const gamesPlayed = stats?.gamesPlayed ?? user?.gamesPlayed ?? 0;
   const showBonusPopup = bonusPopupOpen && !isBanned;
 
@@ -197,8 +203,8 @@ export function HomePage() {
       <section className="space-y-3">
         <div className="text-center text-xl font-medium text-white md:text-3xl">Next cashout</div>
         <p className="text-center text-sm text-[#aaa9bb] md:text-base">{isBanned ? "Cashout and reward earning are unavailable while your account is banned." : balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
-        <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5 md:h-12">
-          <div className="flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] px-5 text-sm font-semibold text-white transition-all duration-700" style={{ width: `${cashoutProgress}%` }}>
+        <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5 md:h-12" role="progressbar" aria-label="Cashout progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(cashoutProgress)}>
+          <div className={`flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] text-sm font-semibold text-white transition-[width] duration-700 ${cashoutProgress > 0 ? "px-5" : "px-0"}`} style={{ width: `${cashoutProgress}%`, minWidth: cashoutProgress > 0 ? "2px" : "0px" }}>
             <span className={cashoutProgress === 0 ? "sr-only" : ""}>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
           </div>
         </div>
