@@ -166,7 +166,7 @@ export function HomePage() {
           </div>
         </div>
       )}
-      <div className="mx-auto w-full max-w-3xl space-y-8 pb-8 md:max-w-5xl md:space-y-10">
+      <div className="mx-auto w-full max-w-5xl space-y-10 pb-8 md:space-y-12">
       {isBanned && (
         <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)] md:p-6">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
@@ -177,7 +177,7 @@ export function HomePage() {
       <section className="space-y-5">
         <div className="flex items-center justify-center gap-3 md:gap-5">
           <details className="group relative">
-            <summary className="flex min-w-[132px] cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border-2 border-[#00c978] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white shadow-[0_0_24px_rgba(0,201,120,.08)] outline-none transition hover:bg-[#1b1d32] focus-visible:ring-2 focus-visible:ring-[#00d57e] md:min-w-[220px] md:px-7 md:py-4 md:text-3xl">
+            <summary className="flex min-w-[148px] cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border border-primary/45 bg-card px-4 py-3 text-xl font-bold text-foreground shadow-sm outline-none transition hover:border-primary/70 hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary md:min-w-[220px] md:px-7 md:py-4 md:text-3xl">
               <span>{isUserLoading ? "—" : formatCurrency(balance)}</span>
             </summary>
             <div className="absolute left-1/2 top-full z-20 mt-3 w-[min(88vw,330px)] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#171827] p-4 text-left text-sm font-normal shadow-2xl">
@@ -192,7 +192,7 @@ export function HomePage() {
             </div>
           </details>
           {showCoupon && (
-            <button type="button" onClick={() => setBonusDetailsOpen(true)} className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border-2 border-[#8d8cae] bg-[#151729] px-4 py-2.5 text-xl font-bold text-white transition hover:border-[#ffe21a] hover:shadow-[0_0_26px_rgba(255,226,26,.18)] md:min-w-[200px] md:px-7 md:py-4 md:text-3xl" aria-label="Open Rockcity bonus details">
+            <button type="button" onClick={() => setBonusDetailsOpen(true)} className="flex min-w-[116px] items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-xl font-bold text-foreground shadow-sm transition hover:border-accent/70 hover:bg-secondary md:min-w-[200px] md:px-7 md:py-4 md:text-3xl" aria-label="Open Rockcity bonus details">
               <Ticket className="h-5 w-5 text-[#ffe21a]" />
               <span className="text-base md:text-xl">Bonus soon</span>
             </button>
@@ -201,10 +201,11 @@ export function HomePage() {
       </section>
 
       <section className="space-y-3">
-        <div className="text-center text-xl font-medium text-white md:text-3xl">Next cashout</div>
+        <div className="text-center text-xl font-semibold tracking-tight text-foreground md:text-3xl">Next cashout</div>
         <p className="text-center text-sm text-[#aaa9bb] md:text-base">{isBanned ? "Cashout and reward earning are unavailable while your account is banned." : balance > 0 ? `${formatCurrency(balance)} earned toward ${formatCurrency(CASHOUT_TARGET)} minimum` : `Earn ${formatCurrency(CASHOUT_TARGET)} to reach the cashout minimum`}</p>
-        <div className="h-9 overflow-hidden rounded-full bg-[#242639] p-0.5 md:h-12" role="progressbar" aria-label="Cashout progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(cashoutProgress)}>
-          <div className={`flex h-full items-center justify-end rounded-full bg-gradient-to-r from-[#00ae65] to-[#08d984] text-sm font-semibold text-white transition-[width] duration-700 ${cashoutProgress > 0 ? "px-5" : "px-0"}`} style={{ width: `${cashoutProgress}%`, minWidth: cashoutProgress > 0 ? "2px" : "0px" }}>
+                <div className="h-3 overflow-hidden rounded-full bg-secondary p-0.5 md:h-4" role="progressbar"
+ aria-label="Cashout progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(cashoutProgress)}>
+          <div className={`flex h-full items-center justify-end rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-[width] duration-700 ${cashoutProgress > 0 ? "px-5" : "px-0"}`} style={{ width: `${cashoutProgress}%`, minWidth: cashoutProgress > 0 ? "2px" : "0px" }}>
             <span className={cashoutProgress === 0 ? "sr-only" : ""}>{formatCurrency(balance)} / {formatCurrency(CASHOUT_TARGET)}</span>
           </div>
         </div>
@@ -212,7 +213,7 @@ export function HomePage() {
 
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <Trophy className="h-8 w-8 text-[#ffe21a]" fill="currentColor" strokeWidth={1.5} />
+          <Trophy className="h-7 w-7 text-accent" fill="currentColor" strokeWidth={1.5} />
           <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Best for You</h1>
         </div>
 
@@ -228,7 +229,7 @@ export function HomePage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Gift className="h-8 w-8 text-[#ffe21a]" fill="currentColor" strokeWidth={1.5} />
+            <Gift className="h-7 w-7 text-accent" fill="currentColor" strokeWidth={1.5} />
             <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">More Offers</h2>
           </div>
           <Link href="/games" className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#00d57e]">View all <ChevronRight className="h-5 w-5" /></Link>
@@ -275,19 +276,20 @@ function OfferCard({ game, featured = false, formatCurrency, disabled = false }:
       : null;
   const detailHref = `/games/${game.id}`;
   const content = (
-    <div className={`group block overflow-hidden rounded-3xl border border-white/10 bg-[#171827] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-[#00d57e]/60"} ${featured ? "" : "min-w-0"}`}>
+    <div className={`group block overflow-hidden rounded-[1.35rem] border border-border/80 bg-card shadow-[0_18px_55px_-40px_rgb(0_0_0_/_0.9)] transition ${disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-[0_22px_60px_-38px_hsl(var(--primary)/.35)]"} ${featured ? "" : "min-w-0"}`}>
       <Link href={detailHref} className="block">
-        <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-gradient-to-br from-[#f6d500] via-[#233a1d] to-[#11121b]`}>
+                  <div className={`${featured ? "h-64 sm:h-80" : "h-36 sm:h-44"} relative overflow-hidden bg-secondary`}>
+
           {resolveGameImageUrl(game.thumbnailUrl) ? <img src={resolveGameImageUrl(game.thumbnailUrl)} alt="" className="h-full w-full object-cover brightness-125 contrast-110 saturate-125 transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-center text-2xl font-black uppercase leading-none text-[#ffe900]">{game.title}</div>}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#171827]/85 via-[#171827]/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
         </div>
         <div className={`${featured ? "p-5" : "p-4"} space-y-3`}>
-          <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-white`}>{game.title}</p>
-          <p className="truncate text-sm text-[#aaa9bb]">{game.description || "Install and play to earn rewards"}</p>
+          <p className={`${featured ? "text-2xl" : "text-base"} truncate font-semibold text-foreground`}>{game.title}</p>
+          <p className="truncate text-sm text-muted-foreground">{game.description || "Install and play to earn rewards"}</p>
         </div>
       </Link>
       <div className={`${featured ? "px-5 pb-5" : "px-4 pb-4"}`}>
-        {disabled || !storeUrl ? <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>{disabled ? "Earning unavailable" : `View milestones · ${formatCurrency(reward)}`}</div> : <a href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)} className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} block rounded-2xl bg-gradient-to-b from-[#08d984] to-[#00ad68] text-center font-bold text-[#071b13] shadow-[0_4px_0_#007e4c]`}>Play and Earn {formatCurrency(reward)}</a>}
+        {disabled || !storeUrl ? <div className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} rounded-xl bg-primary text-center font-bold text-primary-foreground transition-opacity hover:opacity-90`}>{disabled ? "Earning unavailable" : `View milestones · ${formatCurrency(reward)}`}</div> : <a href={storeUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openStoreUrl(storeUrl, event)} className={`${featured ? "py-4 text-xl" : "py-3 text-sm"} block rounded-xl bg-primary text-center font-bold text-primary-foreground transition-opacity hover:opacity-90`}>Play and Earn {formatCurrency(reward)}</a>}
       </div>
     </div>
   );

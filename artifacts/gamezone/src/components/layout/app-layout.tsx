@@ -32,12 +32,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: notificationData, isLoading: notificationsLoading, isError: notificationsError, refetch: refetchNotifications, markRead } = useNotifications(Boolean(currentUser?.id));
 
   return (
-    <div className="min-h-screen bg-[#10111f] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <main className="relative min-h-screen min-w-0">
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-[#10111f]/95 px-4 py-4 backdrop-blur-xl sm:px-6 md:px-10">
+        <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 px-4 py-3.5 backdrop-blur-xl sm:px-6 md:px-10">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
             <Link href={profileHref} className="flex items-center gap-3 rounded-2xl" data-testid="link-session-profile">
-              <div className="h-11 w-11 overflow-hidden rounded-2xl border border-white/10 bg-[#2b2c3c]">
+              <div className="h-11 w-11 overflow-hidden rounded-2xl border border-border/80 bg-secondary shadow-sm">
                 {showAvatar ? (
                   <img
                     src={avatar ?? undefined}
@@ -50,12 +50,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <div className="flex h-full w-full items-center justify-center font-bold text-[#d5d4df]">{initials}</div>
                 )}
               </div>
-              <span className="hidden text-sm font-semibold text-white sm:block">{currentUser?.username || sessionUser?.username || "Player"}</span>
+              <span className="hidden text-sm font-semibold text-foreground sm:block">{currentUser?.username || sessionUser?.username || "Player"}</span>
             </Link>
 
             <div className="flex items-center gap-2">
-              <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-[#00c978] px-3 py-2 text-sm font-bold text-white sm:flex">{formatMoney(Number(currentUser?.balance ?? 0))}</Link>
-              <Link href="/games" className="hidden items-center gap-2 rounded-xl border border-[#8584a4] px-3 py-2 text-sm font-bold text-white sm:flex"><Ticket className="h-4 w-4 text-[#b9b8df]" />0</Link>
+              <Link href="/earnings" className="hidden items-center gap-2 rounded-xl border border-primary/45 bg-primary/8 px-3 py-2 text-sm font-bold text-foreground shadow-sm sm:flex">{formatMoney(Number(currentUser?.balance ?? 0))}</Link>
+              <Link href="/games" className="hidden items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2 text-sm font-bold text-foreground shadow-sm sm:flex"><Ticket className="h-4 w-4 text-muted-foreground" />0</Link>
               <div className="relative">
                 <button type="button" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((open) => !open)} className="relative rounded-full p-2 text-[#9998aa] hover:bg-white/5 hover:text-white">
                   <Bell className="h-6 w-6 fill-current" strokeWidth={1.5} />
@@ -84,7 +84,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <nav className="hidden border-b border-white/5 bg-[#111322]/80 px-4 py-2 backdrop-blur-xl md:block" aria-label="Primary desktop navigation">
+                <nav className="hidden border-b border-border/60 bg-background/70 px-4 py-2.5 backdrop-blur-xl md:block"
+ aria-label="Primary desktop navigation">
           <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 sm:gap-4 md:px-6">
             {bottomLinks.map(({ href, label, icon: Icon }) => {
               const active = href === "/" ? location === "/" : location.startsWith(href);
@@ -92,7 +93,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={`desktop-${href}`}
                   href={href}
-                  className={`flex min-w-28 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${active ? "bg-[#00d57e]/10 text-[#00d57e]" : "text-[#9998aa] hover:bg-white/5 hover:text-white"}`}
+                  className={`flex min-w-28 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${active ? "bg-primary/12 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
                 >
                   <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 1.8} />
                   {label}
@@ -107,11 +108,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/5 bg-[#111322]/98 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden" aria-label="Primary">
+            <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/96 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden"
+ aria-label="Primary">
         <div className="mx-auto grid max-w-xl grid-cols-4">
           {bottomLinks.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? location === "/" : location.startsWith(href);
-            return <Link key={href} href={href} className={`flex flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium ${active ? "text-[#00d57e]" : "text-[#9998aa]"}`}><Icon className="h-6 w-6" strokeWidth={active ? 2.5 : 1.8} />{label}</Link>;
+            return <Link key={href} href={href} className={`flex flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}><Icon className="h-6 w-6" strokeWidth={active ? 2.5 : 1.8} />{label}</Link>;
           })}
         </div>
       </nav>
