@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useManusAuth } from "@/lib/manus-auth";
+import { useAppAuth } from "@/lib/clerk-auth";
 import { Link, useLocation } from "wouter";
 import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,7 +16,7 @@ const bottomLinks = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user: sessionUser, logout } = useManusAuth();
+  const { user: sessionUser, logout } = useAppAuth();
   const { data: currentUser } = useCurrentUser();
   const formatMoney = useMoney();
   const [location] = useLocation();

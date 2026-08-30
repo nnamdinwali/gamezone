@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useManusAuth, startLogin } from '@/lib/manus-auth';
+import { useAppAuth, useConfigureApiAuth } from '@/lib/clerk-auth';
+import { SignIn, SignUp } from '@clerk/react';
 import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CurrencyProvider } from '@/lib/currency';
@@ -56,19 +57,19 @@ function PublicLanding() {
 }
 
 function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
-  const auth = useManusAuth();
+  const auth = useAppAuth();
   const [, navigate] = useLocation();
-  const isOAuthReturn = new URLSearchParams(window.location.search).get('gamezone_auth') === '1';
   useEffect(() => {
-    if (isOAuthReturn && auth.isSignedIn) navigate('/');
-  }, [auth.isSignedIn, isOAuthReturn, navigate]);
-  if (isOAuthReturn && auth.isLoading) return <AuthLoading retry={() => window.location.reload()} />;
+    if (auth.isSignedIn) navigate('/');
+  }, [auth.isSignedIn, navigate]);
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-[#0a1110] px-4 text-[#f2fff5]">
       <div className="w-full max-w-md rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-8 text-center shadow-[0_24px_80px_-48px_rgb(0_0_0_/_0.9)]">
         <h1 className="font-heading text-3xl font-semibold tracking-tight">{mode === 'sign-in' ? 'Welcome back' : 'Join ROCKCITY GAMES'}</h1>
-        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Continue with your Manus account. Your Rockcity profile and rewards are created automatically after authentication.</p>
-        <button type="button" onClick={startLogin} className="mt-7 w-full rounded-xl bg-[#39e36b] px-5 py-3.5 font-bold text-[#06200d] hover:bg-[#62f07f]">{mode === 'sign-in' ? 'Sign in with Manus' : 'Create account with Manus'}</button>
+        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Your Rockcity profile and rewards are created automatically after you continue below.</p>
+        <div className="mt-7 flex justify-center">
+          {mode === 'sign-in' ? <SignIn routing="hash" signUpUrl="/sign-up" /> : <SignUp routing="hash" signInUrl="/sign-in" />}
+        </div>
         <Link href="/" className="mt-5 inline-block text-sm text-[#62f07f] hover:underline">Return home</Link>
       </div>
     </main>
@@ -91,7 +92,7 @@ function AuthLoading({ error, retry }: { error?: unknown; retry: () => void }) {
 }
 
 function useAuthGate() {
-  const auth = useManusAuth();
+  const auth = useAppAuth();
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
     if (auth.isLoaded) return;
@@ -103,7 +104,7 @@ function useAuthGate() {
 }
 
 function HomeRedirect() {
-  const { isSignedIn } = useManusAuth();
+  const { isSignedIn } = useAppAuth();
   // The public landing page must not wait for authentication or an API cold start.
   // Signed-in users are upgraded to the app shell as soon as their session is known.
   return isSignedIn ? <AppLayout><HomePage /></AppLayout> : <PublicLanding />;
@@ -136,9 +137,18 @@ function Router() {
   );
 }
 
+function ApiAuthWiring() {
+  // Registers Clerk's session token with the shared API client so every
+  // request carries an Authorization: Bearer header. Must run before any
+  // page below it fires a data fetch.
+  useConfigureApiAuth();
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ApiAuthWiring />
       <CurrencyProvider>
         <WouterRouter base={basePath}><Router /></WouterRouter>
       </CurrencyProvider>

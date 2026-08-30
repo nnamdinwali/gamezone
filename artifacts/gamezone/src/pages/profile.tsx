@@ -18,7 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useCurrency, useMoney, BASE_CURRENCY } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
-import { useManusAuth } from "@/lib/manus-auth";
+import { useAppAuth } from "@/lib/clerk-auth";
 import { User, Calendar, Gamepad2, Coins, ChevronDown, LogOut } from "lucide-react";
 
 const COUNTRY_CODES = [
@@ -61,7 +61,7 @@ const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.
 
 export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
-  const { logout } = useManusAuth();
+  const { logout } = useAppAuth();
   const formatCurrency = useMoney();
   const { currency, setCurrency } = useCurrency();
   const {
