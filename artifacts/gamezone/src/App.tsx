@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useAppAuth, useConfigureApiAuth } from '@/lib/clerk-auth';
+import { clerkAppearance } from '@/lib/clerk-appearance';
 import { SignIn, SignUp } from '@clerk/react';
 import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -62,15 +63,66 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   useEffect(() => {
     if (auth.isSignedIn) navigate('/');
   }, [auth.isSignedIn, navigate]);
+
+  const homePath = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
+  const isSignIn = mode === 'sign-in';
+
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-[#0a1110] px-4 text-[#f2fff5]">
-      <div className="w-full max-w-md rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-8 text-center shadow-[0_24px_80px_-48px_rgb(0_0_0_/_0.9)]">
-        <h1 className="font-heading text-3xl font-semibold tracking-tight">{mode === 'sign-in' ? 'Welcome back' : 'Join ROCKCITY GAMES'}</h1>
-        <p className="mt-3 text-sm leading-6 text-[#b1c9b8]">Your Rockcity profile and rewards are created automatically after you continue below.</p>
-        <div className="mt-7 flex justify-center">
-          {mode === 'sign-in' ? <SignIn routing="hash" signUpUrl="/sign-up" /> : <SignUp routing="hash" signInUrl="/sign-in" />}
+    <main className="min-h-[100dvh] bg-[#070d0b] text-[#e8f0ea]">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[400px] flex-col justify-center px-6 py-16">
+        <Link
+          href="/"
+          className="mb-10 inline-flex items-center gap-2 text-[13px] text-[#6b7f72] transition-colors hover:text-[#8a9e90]"
+        >
+          ← Rock City
+        </Link>
+
+        <h1 className="text-[28px] font-semibold tracking-tight text-white">
+          {isSignIn ? 'Sign in' : 'Create account'}
+        </h1>
+        <p className="mt-2 text-[14px] leading-6 text-[#8a9e90]">
+          {isSignIn
+            ? 'Continue to your games and rewards.'
+            : 'Start playing and tracking progress in one place.'}
+        </p>
+
+        <div className="mt-8">
+          {isSignIn ? (
+            <SignIn
+              routing="hash"
+              signUpUrl={`${basePath}/sign-up`}
+              forceRedirectUrl={homePath}
+              fallbackRedirectUrl={homePath}
+              appearance={clerkAppearance}
+            />
+          ) : (
+            <SignUp
+              routing="hash"
+              signInUrl={`${basePath}/sign-in`}
+              forceRedirectUrl={homePath}
+              fallbackRedirectUrl={homePath}
+              appearance={clerkAppearance}
+            />
+          )}
         </div>
-        <Link href="/" className="mt-5 inline-block text-sm text-[#62f07f] hover:underline">Return home</Link>
+
+        <p className="mt-8 text-center text-[13px] text-[#6b7f72]">
+          {isSignIn ? (
+            <>
+              No account?{' '}
+              <Link href="/sign-up" className="text-[#38e87b] hover:underline">
+                Create one
+              </Link>
+            </>
+          ) : (
+            <>
+              Already playing?{' '}
+              <Link href="/sign-in" className="text-[#38e87b] hover:underline">
+                Sign in
+              </Link>
+            </>
+          )}
+        </p>
       </div>
     </main>
   );
