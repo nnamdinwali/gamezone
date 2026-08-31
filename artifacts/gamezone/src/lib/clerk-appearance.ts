@@ -1,6 +1,6 @@
 import type { Appearance } from '@clerk/types';
 
-/** Restrained Rock City theme — product UI, not a generic widget */
+/** Rock City theme — keep form chrome visible so sign-up never goes blank */
 export const clerkAppearance: Appearance = {
   layout: {
     socialButtonsPlacement: 'bottom',
@@ -12,8 +12,8 @@ export const clerkAppearance: Appearance = {
     colorText: '#e8f0ea',
     colorTextSecondary: '#8a9e90',
     colorTextOnPrimaryBackground: '#04140c',
-    colorBackground: 'transparent',
-    colorInputBackground: '#0c1512',
+    colorBackground: '#0c1512',
+    colorInputBackground: '#0a1210',
     colorInputText: '#e8f0ea',
     colorNeutral: '#6b7f72',
     colorDanger: '#f07178',
@@ -23,25 +23,23 @@ export const clerkAppearance: Appearance = {
   },
   elements: {
     rootBox: 'w-full',
-    card: 'bg-transparent shadow-none border-0 p-0',
-    header: 'hidden',
+    card: 'bg-transparent shadow-none border-0 p-0 w-full',
+    headerTitle: 'hidden',
+    headerSubtitle: 'hidden',
     footer: 'hidden',
-    main: 'gap-4',
-    form: 'gap-3',
-    formFieldLabel: 'text-[13px] text-[#8a9e90] font-medium mb-1.5',
+    footerAction: 'hidden',
+    formFieldLabel: 'text-[13px] text-[#8a9e90] font-medium',
     formFieldInput:
-      'h-11 rounded-xl border border-white/[0.08] bg-[#0c1512] text-[#e8f0ea] placeholder:text-[#5c6f63] focus:border-[#38e87b]/50 focus:ring-0 transition-colors',
+      'h-11 rounded-xl border border-white/10 bg-[#0a1210] text-[#e8f0ea] placeholder:text-[#5c6f63]',
     formButtonPrimary:
-      'h-11 rounded-xl bg-[#38e87b] text-[#04140c] text-[14px] font-semibold hover:bg-[#4aed88] active:scale-[0.99] transition-all shadow-none',
+      'h-11 rounded-xl bg-[#38e87b] text-[#04140c] text-[14px] font-semibold hover:bg-[#4aed88]',
     socialButtonsBlockButton:
-      'h-11 rounded-xl border border-white/[0.08] bg-transparent text-[#e8f0ea] hover:bg-white/[0.04] transition-colors',
+      'h-11 rounded-xl border border-white/10 bg-transparent text-[#e8f0ea] hover:bg-white/5',
     socialButtonsBlockButtonText: 'font-medium text-[14px]',
-    dividerLine: 'bg-white/[0.06]',
+    dividerLine: 'bg-white/10',
     dividerText: 'text-[#6b7f72] text-xs',
-    formFieldInputShowPasswordButton: 'text-[#6b7f72] hover:text-[#8a9e90]',
+    formFieldInputShowPasswordButton: 'text-[#6b7f72]',
     identityPreviewEditButton: 'text-[#38e87b]',
     formFieldErrorText: 'text-[#f07178] text-[12px]',
-    alert: 'rounded-xl border border-white/[0.06] bg-white/[0.03]',
-    alertText: 'text-[13px] text-[#c5d4c9]',
   },
 };
