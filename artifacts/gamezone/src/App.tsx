@@ -6,7 +6,6 @@ import { SignIn, SignUp, ClerkLoaded, ClerkLoading } from '@clerk/react';
 import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CurrencyProvider } from '@/lib/currency';
-import { Gamepad2 } from 'lucide-react';
 
 import { HomePage } from '@/pages/home';
 import { GamesPage } from '@/pages/games';
@@ -36,11 +35,8 @@ function PublicLanding() {
     <main className="min-h-[100dvh] bg-zinc-950 text-zinc-50">
       <header className="border-b border-zinc-900">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500 text-emerald-950">
-              <Gamepad2 className="size-4" strokeWidth={2.5} />
-            </span>
-            <span className="text-[13px] font-semibold tracking-wide text-white">Rock City</span>
+          <Link href="/" className="text-[15px] font-semibold tracking-tight text-white">
+            Rock City
           </Link>
           <div className="flex items-center gap-2">
             <Link
