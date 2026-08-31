@@ -28,6 +28,8 @@ export const clerkAppearance: Appearance = {
     header: 'hidden',
     footer: 'hidden',
     footerAction: 'hidden',
+    // Hide Clerk "Development mode" ribbon (dev keys only)
+    badge: 'hidden',
     main: 'gap-4',
     form: 'gap-3',
     formFieldRow: 'gap-1.5',
