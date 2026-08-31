@@ -72,29 +72,30 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const isSignIn = mode === 'sign-in';
 
   return (
-    <main className="min-h-[100dvh] bg-[#070d0b] text-[#e8f0ea]">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[400px] flex-col justify-center px-6 py-16">
+    <main className="min-h-[100dvh] bg-zinc-950 text-zinc-50">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[380px] flex-col justify-center px-5 py-14">
         <Link
           href="/"
-          className="mb-10 inline-flex items-center gap-2 text-[13px] text-[#6b7f72] transition-colors hover:text-[#8a9e90]"
+          className="mb-12 inline-flex items-center gap-2 text-[13px] text-zinc-500 transition-colors hover:text-zinc-300"
         >
-          ← Rock City
+          <span aria-hidden="true">←</span> Rock City
         </Link>
 
-        <h1 className="text-[28px] font-semibold tracking-tight text-white">
-          {isSignIn ? 'Sign in' : 'Create account'}
-        </h1>
-        <p className="mt-2 text-[14px] leading-6 text-[#8a9e90]">
-          {isSignIn
-            ? 'Continue to your games and rewards.'
-            : 'Start playing and tracking progress in one place.'}
-        </p>
+        <div className="mb-8">
+          <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-white">
+            {isSignIn ? 'Welcome back' : 'Create your account'}
+          </h1>
+          <p className="mt-2 text-[14px] leading-6 text-zinc-500">
+            {isSignIn
+              ? 'Sign in to keep playing and track rewards.'
+              : 'Join Rock City to play and follow your progress.'}
+          </p>
+        </div>
 
-        <div className="mt-8 min-h-[320px] w-full">
+        <div className="w-full min-h-[300px]">
           <ClerkLoading>
-            <div className="flex flex-col items-center gap-3 py-12">
-              <div className="h-8 w-8 animate-pulse rounded-full bg-[#38e87b]/35" />
-              <p className="text-[13px] text-[#6b7f72]">Loading…</p>
+            <div className="flex items-center justify-center py-16">
+              <div className="h-7 w-7 animate-pulse rounded-full bg-zinc-800" />
             </div>
           </ClerkLoading>
           <ClerkLoaded>
@@ -120,18 +121,18 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           </ClerkLoaded>
         </div>
 
-        <p className="mt-8 text-center text-[13px] text-[#6b7f72]">
+        <p className="mt-10 text-center text-[13px] text-zinc-500">
           {isSignIn ? (
             <>
-              No account?{' '}
-              <Link href="/sign-up" className="text-[#38e87b] hover:underline">
-                Create one
+              New here?{' '}
+              <Link href="/sign-up" className="font-medium text-zinc-200 underline-offset-4 hover:underline">
+                Create an account
               </Link>
             </>
           ) : (
             <>
-              Already playing?{' '}
-              <Link href="/sign-in" className="text-[#38e87b] hover:underline">
+              Already have an account?{' '}
+              <Link href="/sign-in" className="font-medium text-zinc-200 underline-offset-4 hover:underline">
                 Sign in
               </Link>
             </>
