@@ -59,10 +59,10 @@ function PublicLanding() {
         <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl sm:leading-[1.1]">
           Play games.
           <br />
-          Keep your progress.
+          Get paid.
         </h1>
         <p className="mt-5 max-w-md text-[16px] leading-7 text-zinc-400">
-          Rock City is a place to find games, play, and see what you earn — all in one account.
+          Find games, play, and watch your balance grow in one account.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
