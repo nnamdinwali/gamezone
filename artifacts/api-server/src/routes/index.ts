@@ -8,6 +8,8 @@ import leaderboardRouter from "./leaderboard";
 import dashboardRouter from "./dashboard";
 import adminRouter from "./admin";
 import gameEventsRouter from "./game_events";
+import payoutMethodsRouter from "./payout_methods";
+import supportMessagesRouter from "./support_messages";
 
 const router: IRouter = Router();
 
@@ -20,5 +22,7 @@ router.use(leaderboardRouter);
 router.use(dashboardRouter);
 router.use(adminRouter);
 router.use(gameEventsRouter);
+router.use(payoutMethodsRouter);
+router.use(supportMessagesRouter);
 
 export default router;

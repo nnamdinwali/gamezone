@@ -6,7 +6,7 @@ import { desc, eq, sql } from "drizzle-orm";
 const router = Router();
 const ownerEmail = process.env.ADMIN_OWNER_EMAIL?.trim().toLowerCase();
 
-async function requireAdmin(req: Request, res: Response) {
+export async function requireAdmin(req: Request, res: Response) {
   const clerkId = getAuth(req).userId;
   if (!clerkId) {
     res.status(401).json({ error: "Authentication required" });

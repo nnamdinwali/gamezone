@@ -40,7 +40,7 @@ const configuredOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? "")
 const allowedOrigins = new Set(
   configuredOrigins.length > 0
     ? configuredOrigins
-    : ["https://nnamdiwali.github.io", "http://localhost:5173"],
+    : ["https://nnamdinwali.github.io", "http://localhost:5173"],
 );
 
 app.use(
@@ -65,7 +65,7 @@ app.use(express.urlencoded({ extended: true }));
 // rejects the bearer token and every authenticated route returns 401.
 const authorizedParties = (
   process.env.CLERK_AUTHORIZED_PARTIES ??
-  "https://nnamdiwali.github.io,http://localhost:5173"
+  "https://nnamdinwali.github.io,http://localhost:5173"
 )
   .split(",")
   .map((origin) => origin.trim())
