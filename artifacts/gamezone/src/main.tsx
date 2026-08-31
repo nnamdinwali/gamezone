@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/react';
 import { setBaseUrl } from '@workspace/api-client-react';
+import { clerkAppearance } from './lib/clerk-appearance';
 
 import App from './App';
 
@@ -11,14 +12,21 @@ import './index.css';
 const apiUrl = import.meta.env.VITE_API_URL || 'https://gamezoneapi-cp623ub2.manus.space';
 setBaseUrl(apiUrl);
 
-// Publishable key is safe to expose in client code by design (unlike the
-// secret key, which only ever lives on the backend).
-const clerkPublishableKey =
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
-  'pk_test_c2tpbGxlZC1tYW1tb3RoLTMyNzAuY2xlcmsuYWNjb3VudHMuZGV2JA';
+// Publishable key must come from env / CI secrets — never hardcode a live key.
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!clerkPublishableKey) {
+  console.error(
+    'Missing VITE_CLERK_PUBLISHABLE_KEY. Set it in .env and GitHub Actions secrets.',
+  );
+}
 
 createRoot(document.getElementById('root')!).render(
-  <ClerkProvider publishableKey={clerkPublishableKey}>
+  <ClerkProvider
+    publishableKey={clerkPublishableKey || ''}
+    appearance={clerkAppearance}
+    afterSignOutUrl={import.meta.env.BASE_URL || '/'}
+  >
     <App />
   </ClerkProvider>,
 );
