@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useAppAuth, useConfigureApiAuth } from '@/lib/clerk-auth';
 import { clerkAppearance } from '@/lib/clerk-appearance';
-import { SignIn, SignUp } from '@clerk/react';
+import { SignIn, SignUp, ClerkLoaded, ClerkLoading } from '@clerk/react';
 import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CurrencyProvider } from '@/lib/currency';
@@ -64,7 +64,11 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     if (auth.isSignedIn) navigate('/');
   }, [auth.isSignedIn, navigate]);
 
-  const homePath = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
+  const homeUrl = `${origin}${base}`;
+  const signInUrl = `${origin}${base}sign-in`;
+  const signUpUrl = `${origin}${base}sign-up`;
   const isSignIn = mode === 'sign-in';
 
   return (
@@ -86,24 +90,34 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
             : 'Start playing and tracking progress in one place.'}
         </p>
 
-        <div className="mt-8">
-          {isSignIn ? (
-            <SignIn
-              routing="hash"
-              signUpUrl={`${basePath}/sign-up`}
-              forceRedirectUrl={homePath}
-              fallbackRedirectUrl={homePath}
-              appearance={clerkAppearance}
-            />
-          ) : (
-            <SignUp
-              routing="hash"
-              signInUrl={`${basePath}/sign-in`}
-              forceRedirectUrl={homePath}
-              fallbackRedirectUrl={homePath}
-              appearance={clerkAppearance}
-            />
-          )}
+        <div className="mt-8 min-h-[320px] w-full">
+          <ClerkLoading>
+            <div className="flex flex-col items-center gap-3 py-12">
+              <div className="h-8 w-8 animate-pulse rounded-full bg-[#38e87b]/35" />
+              <p className="text-[13px] text-[#6b7f72]">Loading…</p>
+            </div>
+          </ClerkLoading>
+          <ClerkLoaded>
+            {isSignIn ? (
+              <SignIn
+                routing="path"
+                path={`${basePath}/sign-in`}
+                signUpUrl={signUpUrl}
+                forceRedirectUrl={homeUrl}
+                fallbackRedirectUrl={homeUrl}
+                appearance={clerkAppearance}
+              />
+            ) : (
+              <SignUp
+                routing="path"
+                path={`${basePath}/sign-up`}
+                signInUrl={signInUrl}
+                forceRedirectUrl={homeUrl}
+                fallbackRedirectUrl={homeUrl}
+                appearance={clerkAppearance}
+              />
+            )}
+          </ClerkLoaded>
         </div>
 
         <p className="mt-8 text-center text-[13px] text-[#6b7f72]">
