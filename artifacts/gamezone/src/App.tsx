@@ -6,7 +6,7 @@ import { SignIn, SignUp, ClerkLoaded, ClerkLoading } from '@clerk/react';
 import { Route, Switch, Router as WouterRouter, Link, Redirect, useLocation } from 'wouter';
 import { AppLayout } from '@/components/layout/app-layout';
 import { CurrencyProvider } from '@/lib/currency';
-import { ArrowRight, ArrowUpRight, Check, CirclePlay, Gamepad2, Globe2, ShieldCheck, Sparkles, Trophy, Zap } from 'lucide-react';
+import { Gamepad2 } from 'lucide-react';
 
 import { HomePage } from '@/pages/home';
 import { GamesPage } from '@/pages/games';
@@ -33,26 +33,80 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function PublicLanding() {
   return (
-    <main className="rock-city-shell min-h-[100dvh] overflow-hidden bg-[#0a1110] text-[#f3f7f1]">
-      <div className="rock-city-noise pointer-events-none fixed inset-0 z-0" aria-hidden="true" />
-      <header className="relative z-10 border-b border-white/10 bg-[#0a1110]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[76px] w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12">
-          <Link href="/" className="group flex items-center gap-3 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38e87b] focus-visible:ring-offset-2 focus-visible:ring-offset-[#071d16]" data-testid="link-public-logo">
-            <span className="flex size-10 items-center justify-center rounded-xl border border-[#38e87b]/40 bg-[#38e87b] text-[#062015] shadow-[0_0_26px_rgba(56,232,123,0.2)] transition-transform duration-200 group-hover:-rotate-6"><Gamepad2 className="size-5" strokeWidth={2.4} /></span>
-            <span className="text-[15px] font-bold tracking-[0.24em] text-white">ROCK CITY</span>
+    <main className="min-h-[100dvh] bg-zinc-950 text-zinc-50">
+      <header className="border-b border-zinc-900">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-5">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500 text-emerald-950">
+              <Gamepad2 className="size-4" strokeWidth={2.5} />
+            </span>
+            <span className="text-[13px] font-semibold tracking-wide text-white">Rock City</span>
           </Link>
-          <nav className="hidden items-center gap-8 text-sm text-[#b8c9be] md:flex" aria-label="Primary navigation"><a className="transition-colors hover:text-white" href="#how-it-works">How it works</a><a className="transition-colors hover:text-white" href="#why-rock-city">Why Rock City</a></nav>
-          <div className="flex items-center gap-2 sm:gap-3"><Link href="/sign-in" className="rounded-xl px-4 py-2.5 text-sm font-semibold text-[#d6e2d9] transition-colors hover:bg-white/10 hover:text-white" data-testid="link-public-sign-in">Sign in</Link><Link href="/sign-up" className="rounded-xl bg-[#38e87b] px-4 py-2.5 text-sm font-bold text-[#062015] shadow-[0_8px_26px_rgba(56,232,123,0.18)] transition-all hover:bg-[#61f294]" data-testid="link-public-sign-up">Start playing</Link></div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/sign-in"
+              className="rounded-lg px-3 py-2 text-[13px] font-medium text-zinc-400 hover:text-white"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="rounded-lg bg-white px-3.5 py-2 text-[13px] font-semibold text-zinc-950 hover:bg-zinc-200"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
       </header>
-      <main className="relative z-10">
-        <section className="mx-auto grid w-full max-w-7xl gap-14 px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:gap-20 lg:px-12 lg:pb-28 lg:pt-28">
-          <div className="max-w-2xl"><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#38e87b]/25 bg-[#38e87b]/[0.07] px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#72f79e]"><Sparkles className="size-3.5" />The player-powered arcade</div><h1 className="max-w-3xl text-5xl font-black leading-[0.96] tracking-[-0.055em] text-white sm:text-7xl lg:text-[88px]">Play smart,<span className="block text-[#38e87b]">earn momentum.</span></h1><p className="mt-7 max-w-xl text-lg leading-8 text-[#b8c9be] sm:text-xl">Discover games worth your time, keep your progress in view, and turn every focused session into a reason to come back.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><Link href="/sign-up" className="inline-flex h-14 items-center justify-center rounded-2xl bg-[#38e87b] px-7 text-base font-bold text-[#062015] shadow-[0_16px_40px_rgba(56,232,123,0.18)] transition-all hover:bg-[#61f294]" data-testid="link-hero-sign-up">Enter Rock City<ArrowRight className="ml-2 size-5" /></Link><a href="#how-it-works" className="inline-flex h-14 items-center justify-center rounded-2xl border border-white/20 bg-transparent px-7 text-base font-semibold text-white transition-colors hover:bg-white/10" data-testid="link-hero-how-it-works">See how it works</a></div><div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-[#8fa99a]"><span className="inline-flex items-center gap-2"><Check className="size-4 text-[#38e87b]" />Player-first by design</span><span className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-[#38e87b]" />Secure account access</span></div></div>
-          <div className="relative mx-auto w-full max-w-[520px] lg:justify-self-end"><div className="pointer-events-none absolute -right-8 -top-10 size-48 rounded-full bg-[#38e87b]/20 blur-3xl" aria-hidden="true" /><div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-5"><div className="rounded-[1.45rem] border border-white/10 bg-[#101b18] p-5 sm:p-7"><div className="flex items-center justify-between border-b border-white/10 pb-5"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#70e993]">Your player hub</p><p className="mt-2 text-xl font-bold text-white">A clearer way to play</p></div><span className="flex size-11 items-center justify-center rounded-2xl bg-[#38e87b]/15 text-[#38e87b]"><CirclePlay className="size-5" /></span></div><div className="mt-6 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><Gamepad2 className="size-5 text-[#38e87b]" /><p className="mt-8 text-sm text-[#8fa99a]">Game discovery</p><p className="mt-1 font-bold text-white">Find your next run</p></div><div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><Trophy className="size-5 text-[#38e87b]" /><p className="mt-8 text-sm text-[#8fa99a]">Rewards</p><p className="mt-1 font-bold text-white">See your progress</p></div></div><div className="mt-3 flex items-center justify-between rounded-2xl border border-[#38e87b]/20 bg-[#38e87b]/[0.08] p-4"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-[#38e87b] text-[#062015]"><Zap className="size-5" /></span><div><p className="text-sm font-bold text-white">Keep your momentum</p><p className="mt-0.5 text-xs text-[#a8c6b2]">Every session has a place</p></div></div><ArrowUpRight className="size-5 text-[#70e993]" /></div></div><div className="flex items-center justify-between px-2 pb-1 pt-4 text-xs text-[#789686]"><span className="inline-flex items-center gap-1.5"><Globe2 className="size-3.5" />Built for players everywhere</span><span>01 / 03</span></div></div></div>
-        </section>
-        <section id="how-it-works" className="mx-auto w-full max-w-7xl scroll-mt-24 px-5 pb-20 sm:px-8 lg:px-12 lg:pb-28"><div className="mb-10 flex flex-col justify-between gap-5 border-t border-white/10 pt-7 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#70e993]">Simple by design</p><h2 className="mt-3 max-w-xl text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">Everything you need for a better session.</h2></div><p className="max-w-sm text-sm leading-6 text-[#8fa99a]">No noise. No inflated promises. Just a focused home for discovering games and following your rewards.</p></div><div className="grid gap-4 md:grid-cols-3">{[{n:'01',icon:Gamepad2,title:'Play curated games',body:'Find focused experiences worth your time, all in one player-first home.'},{n:'02',icon:Zap,title:'Track every reward',body:'Keep your sessions and progress visible as you build momentum.'},{n:'03',icon:Trophy,title:'Build your streak',body:'Turn consistent play into a clearer path through your player journey.'}].map(({n,icon:Icon,title,body}) => <article key={n} className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 sm:p-7"><div className="flex items-center justify-between"><span className="text-xs font-bold tracking-[0.2em] text-[#70e993]">{n}</span><Icon className="size-5 text-[#38e87b]" /></div><h3 className="mt-14 text-xl font-bold text-white">{title}</h3><p className="mt-3 text-sm leading-6 text-[#8fa99a]">{body}</p></article>)}</div></section>
-        <section id="why-rock-city" className="mx-auto w-full max-w-7xl scroll-mt-24 px-5 pb-24 sm:px-8 lg:px-12 lg:pb-32"><div className="relative overflow-hidden rounded-[2rem] border border-[#38e87b]/20 bg-[#0b2b20] px-6 py-12 sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-14"><div className="relative max-w-2xl"><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#70e993]">Ready when you are</p><h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">Your next focused session starts here.</h2></div><Link href="/sign-up" className="relative mt-7 inline-flex items-center rounded-2xl bg-[#38e87b] px-6 py-3.5 font-bold text-[#062015] transition-colors hover:bg-[#61f294] lg:mt-0">Create your account<ArrowUpRight className="ml-2 size-4" /></Link></div></section>
-      </main>
+
+      <section className="mx-auto max-w-5xl px-5 pb-20 pt-16 sm:pt-24">
+        <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl sm:leading-[1.1]">
+          Play games.
+          <br />
+          Keep your progress.
+        </h1>
+        <p className="mt-5 max-w-md text-[16px] leading-7 text-zinc-400">
+          Rock City is a place to find games, play, and see what you earn — all in one account.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/sign-up"
+            className="inline-flex h-11 items-center rounded-lg bg-emerald-500 px-5 text-[14px] font-semibold text-emerald-950 hover:bg-emerald-400"
+          >
+            Create account
+          </Link>
+          <Link
+            href="/sign-in"
+            className="inline-flex h-11 items-center rounded-lg border border-zinc-800 px-5 text-[14px] font-medium text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900"
+          >
+            Sign in
+          </Link>
+        </div>
+      </section>
+
+      <section className="border-t border-zinc-900">
+        <div className="mx-auto grid max-w-5xl gap-px bg-zinc-900 sm:grid-cols-3">
+          {[
+            { title: 'Games', body: 'Browse what’s available and jump into a session.' },
+            { title: 'Progress', body: 'Your play history and rewards stay on your profile.' },
+            { title: 'Rewards', body: 'Track earnings from the games you play.' },
+          ].map((item) => (
+            <div key={item.title} className="bg-zinc-950 px-5 py-8 sm:px-6">
+              <h2 className="text-[14px] font-semibold text-white">{item.title}</h2>
+              <p className="mt-2 text-[14px] leading-6 text-zinc-500">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="border-t border-zinc-900">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6 text-[12px] text-zinc-600">
+          <span>Rock City</span>
+          <Link href="/sign-up" className="hover:text-zinc-400">
+            Get started
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 }
