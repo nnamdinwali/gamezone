@@ -50,7 +50,7 @@ export function MobileNav() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
                   <CircleDot className="h-5 w-5 text-primary" />
                 </div>
-                <span className="font-heading text-lg font-bold tracking-tight">ROCKCITY GAMES</span>
+                <span className="font-heading text-lg font-bold tracking-tight">Rock City</span>
               </Link>
               <button
                 type="button"
