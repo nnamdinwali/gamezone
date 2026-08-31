@@ -31,9 +31,45 @@ const queryClient = new QueryClient({
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function PublicLanding() {
+  // Soft decorative tiles — no third-party brand art, no downloads
+  const tiles = [
+    'from-emerald-500/25 to-emerald-900/10',
+    'from-sky-500/20 to-sky-900/10',
+    'from-violet-500/20 to-violet-900/10',
+    'from-amber-500/20 to-amber-900/10',
+    'from-rose-500/15 to-rose-900/10',
+    'from-teal-500/20 to-teal-900/10',
+    'from-lime-500/15 to-lime-900/10',
+    'from-indigo-500/20 to-indigo-900/10',
+    'from-fuchsia-500/15 to-fuchsia-900/10',
+    'from-cyan-500/20 to-cyan-900/10',
+    'from-orange-500/15 to-orange-900/10',
+    'from-emerald-400/20 to-zinc-900/20',
+  ];
+
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 text-zinc-50">
-      <header className="border-b border-zinc-900">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-zinc-950 text-zinc-50">
+      {/* Background icon grid */}
+      <div
+        className="pointer-events-none absolute inset-0 select-none"
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 grid grid-cols-4 gap-3 p-4 opacity-[0.35] sm:grid-cols-6 sm:gap-4 sm:p-6">
+          {tiles.concat(tiles).map((grad, i) => (
+            <div
+              key={i}
+              className={`aspect-square rounded-2xl bg-gradient-to-br ${grad} border border-white/5 shadow-inner`}
+              style={{
+                transform: `rotate(${(i % 5) * 3 - 6}deg) scale(${0.88 + (i % 3) * 0.04})`,
+              }}
+            />
+          ))}
+        </div>
+        {/* Fade so text stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/70 via-zinc-950/85 to-zinc-950" />
+      </div>
+
+      <header className="relative z-10 border-b border-zinc-900/80">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-5">
           <Link href="/" className="text-[15px] font-semibold tracking-tight text-white">
             Rock City
@@ -55,7 +91,7 @@ function PublicLanding() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-5 pb-20 pt-16 sm:pt-24">
+      <section className="relative z-10 mx-auto max-w-5xl px-5 pb-20 pt-16 sm:pt-24">
         <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-white sm:text-5xl sm:leading-[1.1]">
           Play games.
           <br />
@@ -73,7 +109,7 @@ function PublicLanding() {
           </Link>
           <Link
             href="/sign-in"
-            className="inline-flex h-11 items-center rounded-lg border border-zinc-800 px-5 text-[14px] font-medium text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900"
+            className="inline-flex h-11 items-center rounded-lg border border-zinc-800 bg-zinc-950/60 px-5 text-[14px] font-medium text-zinc-200 backdrop-blur-sm hover:border-zinc-700 hover:bg-zinc-900"
           >
             Sign in
           </Link>
