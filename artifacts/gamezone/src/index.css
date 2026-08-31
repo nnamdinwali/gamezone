@@ -132,3 +132,27 @@
     text-transform: none;
   }
 }
+
+/* clerk overrides — hide development ribbon, force dark inputs, no button arrow */
+.cl-badge,
+.cl-internal-b3fm6y,
+[class*="cl-badge"],
+[data-localization-key="badge__default"] {
+  display: none !important;
+}
+
+.cl-formButtonPrimary svg,
+.cl-formButtonPrimary .cl-buttonArrowIcon,
+.cl-buttonArrowIcon {
+  display: none !important;
+}
+
+.cl-formFieldInput,
+input.cl-formFieldInput {
+  background-color: #18181b !important;
+  color: #fafafa !important;
+  border-color: #27272a !important;
+  -webkit-box-shadow: 0 0 0 1000px #18181b inset !important;
+  box-shadow: 0 0 0 1000px #18181b inset !important;
+  -webkit-text-fill-color: #fafafa !important;
+}
