@@ -28,16 +28,20 @@ export const clerkAppearance: Appearance = {
     header: 'hidden',
     footer: 'hidden',
     footerAction: 'hidden',
-    // Hide Clerk "Development mode" ribbon (dev keys only)
-    badge: 'hidden',
+    footerPages: 'hidden',
+    footerPagesLink: 'hidden',
+    badge: 'hidden !important',
     main: 'gap-4',
     form: 'gap-3',
     formFieldRow: 'gap-1.5',
     formFieldLabel: 'text-[13px] font-medium text-zinc-400',
     formFieldInput:
-      'h-12 rounded-[10px] border border-zinc-800 bg-zinc-900 text-zinc-50 text-[15px] placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-0',
+      'h-12 rounded-[10px] border border-zinc-800 !bg-zinc-900 !text-zinc-50 text-[15px] placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-0 shadow-none',
     formButtonPrimary:
       'h-12 rounded-[10px] bg-emerald-500 text-emerald-950 text-[15px] font-semibold hover:bg-emerald-400 shadow-none',
+    // Remove arrow / play icon on Continue
+    formButtonPrimaryIcon: 'hidden',
+    buttonArrowIcon: 'hidden',
     socialButtonsBlockButton:
       'h-12 rounded-[10px] border border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:border-zinc-700',
     socialButtonsBlockButtonText: 'text-[15px] font-medium text-zinc-100',
