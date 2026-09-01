@@ -22,11 +22,33 @@ function maskDetails(method: string, details: Record<string, string>) {
   return { accountIdentifier: mask(details.accountIdentifier || details.phone) };
 }
 
+const METHOD_DISPLAY_NAMES: Record<string, string> = {
+  paypal: "PayPal",
+  bank_transfer: "Bank transfer",
+  opay: "Opay",
+  palmpay: "PalmPay",
+};
+
+function buildLabel(method: string, details: Record<string, string>) {
+  const name = METHOD_DISPLAY_NAMES[method] ?? method;
+  if (method === "paypal") return details.email ? `${name} — ${details.email}` : name;
+  if (method === "bank_transfer") return details.bankName ? `${name} — ${details.bankName}` : name;
+  const identifier = details.accountIdentifier || details.phone;
+  return identifier ? `${name} — ${identifier}` : name;
+}
+
+function maskedDetailsString(method: string, details: Record<string, string>) {
+  const masked = maskDetails(method, details);
+  return Object.values(masked).filter(Boolean).join(" · ");
+}
+
 function serialize(p: typeof payoutMethodsTable.$inferSelect) {
   const details = JSON.parse(p.details) as Record<string, string>;
   return {
     id: p.id,
     method: p.method,
+    label: buildLabel(p.method, details),
+    maskedDetails: maskedDetailsString(p.method, details),
     countryCode: p.countryCode,
     isDefault: p.isDefault,
     details: maskDetails(p.method, details),
