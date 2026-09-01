@@ -10,6 +10,8 @@ import adminRouter from "./admin";
 import gameEventsRouter from "./game_events";
 import payoutMethodsRouter from "./payout_methods";
 import supportMessagesRouter from "./support_messages";
+import notificationsRouter from "./notifications";
+import withdrawalsRouter from "./withdrawals";
 
 const router: IRouter = Router();
 
@@ -24,5 +26,7 @@ router.use(adminRouter);
 router.use(gameEventsRouter);
 router.use(payoutMethodsRouter);
 router.use(supportMessagesRouter);
+router.use(notificationsRouter);
+router.use(withdrawalsRouter);
 
 export default router;

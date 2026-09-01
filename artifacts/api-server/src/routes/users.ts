@@ -14,6 +14,8 @@ function serializeUser(user: typeof usersTable.$inferSelect) {
     balance: user.balance,
     totalEarnings: user.totalEarnings,
     gamesPlayed: user.gamesPlayed,
+    countryCode: user.countryCode,
+    currencyCode: user.currencyCode,
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -118,6 +120,32 @@ router.get("/users/me", async (req, res) => {
     }
 
     return res.json(serializeUser(user));
+  } catch (err) {
+    req.log.error(err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /users/me — the signed-in player updates their own country/currency preference
+router.patch("/users/me", async (req, res) => {
+  try {
+    const clerkId = getAuth(req).userId;
+    if (!clerkId) return res.status(401).json({ error: "Authentication required" });
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, clerkId));
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const { countryCode, currencyCode } = req.body as { countryCode?: string; currencyCode?: string };
+    const [updated] = await db
+      .update(usersTable)
+      .set({
+        ...(countryCode ? { countryCode: countryCode.toUpperCase() } : {}),
+        ...(currencyCode ? { currencyCode: currencyCode.toUpperCase() } : {}),
+      })
+      .where(eq(usersTable.id, user.id))
+      .returning();
+
+    return res.json(serializeUser(updated));
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });

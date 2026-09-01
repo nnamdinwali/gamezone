@@ -11,6 +11,7 @@ import { useCurrency, useMoney } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
+import { apiFetch } from "@/lib/api-fetch";
 
 export const CASHOUT_TARGET = 2.5;
 
@@ -106,9 +107,8 @@ export function HomePage() {
   const saveCurrency = async () => {
     setCurrencyStatus("Saving…");
     try {
-      const response = await fetch(`${API_BASE}/api/users/me`, {
+      const response = await apiFetch("/api/users/me", {
         method: "PATCH",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currencyCode: selectedCurrency }),
       });
@@ -256,7 +256,7 @@ function OfferCard({ game, featured = false, formatCurrency, disabled = false }:
   const [milestoneTotal, setMilestoneTotal] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/games/${game.id}/milestones`, { credentials: "include", cache: "no-store" })
+    apiFetch(`/api/games/${game.id}/milestones`, { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return [];
         const payload = await response.json();

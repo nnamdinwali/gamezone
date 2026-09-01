@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
-import { db, gamesTable } from "@workspace/db";
-import { eq, ilike, or, desc } from "drizzle-orm";
+import { db, gamesTable, gameMilestonesTable } from "@workspace/db";
+import { eq, ilike, or, desc, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -227,6 +227,29 @@ router.delete("/games/:id", async (req, res) => {
     const id = Number(req.params.id);
     await db.delete(gamesTable).where(eq(gamesTable.id, id));
     res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /games/:id/milestones — public, active milestones for a game, optionally scoped to a country
+router.get("/games/:id/milestones", async (req, res) => {
+  try {
+    const gameId = Number(req.params.id);
+    const country = typeof req.query.country === "string" ? req.query.country.toUpperCase() : null;
+
+    const milestones = await db
+      .select()
+      .from(gameMilestonesTable)
+      .where(
+        country
+          ? and(eq(gameMilestonesTable.gameId, gameId), eq(gameMilestonesTable.isActive, true), eq(gameMilestonesTable.countryCode, country))
+          : and(eq(gameMilestonesTable.gameId, gameId), eq(gameMilestonesTable.isActive, true)),
+      )
+      .orderBy(gameMilestonesTable.level);
+
+    res.json(milestones);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

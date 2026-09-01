@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { apiFetch } from "./api-fetch";
 
 /**
  * Money is ALWAYS stored and calculated in one base currency (USD).
@@ -123,7 +124,7 @@ async function resolveCurrency(): Promise<string> {
 
   // Read the server-side preference so a saved choice follows the user to another device.
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space"}/api/users/me`, { credentials: "include", cache: "no-store" });
+    const response = await apiFetch("/api/users/me", { cache: "no-store" });
     if (response.ok) {
       const profile = (await response.json()) as { currencyCode?: string | null };
       if (isCurrencyCode(profile.currencyCode)) {
@@ -146,9 +147,8 @@ async function resolveCurrency(): Promise<string> {
     } catch {
       /* private mode: continue without persistence */
     }
-    void fetch(`${import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space"}/api/users/me`, {
+    void apiFetch("/api/users/me", {
       method: "PATCH",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ countryCode: ipResult.countryCode }),
     }).catch(() => undefined);

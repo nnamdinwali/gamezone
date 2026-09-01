@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
+import { apiFetchJson } from "./api-fetch";
 
 export type GameZoneNotification = {
   id: number;
@@ -18,22 +17,14 @@ type NotificationResponse = {
 const notificationsKey = ["gamezone", "notifications"];
 
 async function getNotifications(): Promise<NotificationResponse> {
-  const response = await fetch(`${API_BASE}/api/notifications`, {
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(`Notifications request failed (${response.status})`);
-  return (await response.json()) as NotificationResponse;
+  return apiFetchJson<NotificationResponse>("/api/notifications", { cache: "no-store" });
 }
 
 async function markNotificationRead(id: number): Promise<GameZoneNotification> {
-  const response = await fetch(`${API_BASE}/api/notifications/${id}/read`, {
+  return apiFetchJson<GameZoneNotification>(`/api/notifications/${id}/read`, {
     method: "PATCH",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
   });
-  if (!response.ok) throw new Error(`Notification update failed (${response.status})`);
-  return (await response.json()) as GameZoneNotification;
 }
 
 export function useNotifications(enabled = true) {
@@ -52,3 +43,4 @@ export function useNotifications(enabled = true) {
   });
   return { ...query, markRead };
 }
+

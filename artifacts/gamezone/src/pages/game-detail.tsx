@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Play, Coins, ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
+import { apiFetch } from "@/lib/api-fetch";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 type GameMilestone = { id: number; level: number; title: string; objectiveType?: "level" | "unlock" | "merge" | "stage" | "custom"; rewardAmount: number; currency: string; countryCode: string; isActive: boolean; completed?: boolean };
@@ -28,7 +29,7 @@ export function GameDetailPage() {
     if (!id) return;
     let cancelled = false;
     setMilestonesLoading(true);
-    fetch(`${API_BASE}/api/games/${id}/milestones`, { credentials: "include", cache: "no-store" })
+    apiFetch(`/api/games/${id}/milestones`, { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) throw new Error("Unable to load milestones");
         return response.json();

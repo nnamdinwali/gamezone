@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
-import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable } from "@workspace/db";
+import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable, earningsTable } from "@workspace/db";
 import { desc, eq, sql } from "drizzle-orm";
 
 const router = Router();
@@ -189,6 +189,71 @@ router.delete("/admin/milestones/:id", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Unable to delete milestone" });
+  }
+});
+
+// GET /admin/withdrawals — every pending/processed withdrawal, for admin approval
+router.get("/admin/withdrawals", async (req, res) => {
+  if (!(await requireAdmin(req, res))) return;
+  try {
+    const withdrawals = await db
+      .select({
+        id: earningsTable.id,
+        userId: earningsTable.userId,
+        username: usersTable.username,
+        amount: earningsTable.amount,
+        status: earningsTable.status,
+        payoutMethodId: earningsTable.payoutMethodId,
+        createdAt: earningsTable.createdAt,
+      })
+      .from(earningsTable)
+      .leftJoin(usersTable, eq(earningsTable.userId, usersTable.id))
+      .where(eq(earningsTable.type, "withdrawal"))
+      .orderBy(desc(earningsTable.createdAt));
+
+    res.json(
+      withdrawals.map((w) => ({
+        id: w.id,
+        userId: w.userId,
+        username: w.username,
+        amount: Math.abs(w.amount),
+        status: w.status,
+        payoutMethodId: w.payoutMethodId,
+        createdAt: w.createdAt.toISOString(),
+      })),
+    );
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /admin/withdrawals/:id/status — approve or reject a withdrawal
+router.patch("/admin/withdrawals/:id/status", async (req, res) => {
+  if (!(await requireAdmin(req, res))) return;
+  try {
+    const id = Number(req.params.id);
+    const { status } = req.body as { status?: "completed" | "rejected" };
+    if (status !== "completed" && status !== "rejected") {
+      return res.status(400).json({ error: "status must be 'completed' or 'rejected'" });
+    }
+
+    const [withdrawal] = await db.select().from(earningsTable).where(eq(earningsTable.id, id));
+    if (!withdrawal || withdrawal.type !== "withdrawal") return res.status(404).json({ error: "Withdrawal not found" });
+
+    // Rejecting refunds the balance back to the player.
+    if (status === "rejected" && withdrawal.status !== "rejected") {
+      const [user] = await db.select().from(usersTable).where(eq(usersTable.id, withdrawal.userId));
+      if (user) {
+        await db.update(usersTable).set({ balance: user.balance + Math.abs(withdrawal.amount) }).where(eq(usersTable.id, user.id));
+      }
+    }
+
+    const [updated] = await db.update(earningsTable).set({ status }).where(eq(earningsTable.id, id)).returning();
+    res.json({ id: updated.id, status: updated.status });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

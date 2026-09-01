@@ -3,8 +3,8 @@ import {
   getGetCurrentUserQueryKey,
   useGetCurrentUser,
 } from "@workspace/api-client-react";
+import { apiFetch } from "./api-fetch";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 const COUNTRY_KEY = "gamezone:country-code";
 
 export function useCurrentUser() {
@@ -29,9 +29,8 @@ export function useCurrentUser() {
     }
     if (!detectedCountry) return;
 
-    void fetch(`${API_BASE}/api/users/me`, {
+    void apiFetch("/api/users/me", {
       method: "PATCH",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ countryCode: detectedCountry }),
     }).catch(() => undefined);

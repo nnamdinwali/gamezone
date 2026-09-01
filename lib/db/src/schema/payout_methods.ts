@@ -5,9 +5,9 @@ import { z } from "zod/v4";
 export const payoutMethodsTable = pgTable("payout_methods", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  type: text("type").notNull(), // bank_transfer | mobile_money | paypal
-  label: text("label").notNull(), // display name, e.g. "GTBank ****1234"
-  details: text("details").notNull(), // JSON-encoded provider-specific fields
+  countryCode: text("country_code").notNull().default("US"),
+  method: text("method").notNull(), // paypal | bank_transfer | opay | palmpay
+  details: text("details").notNull(), // JSON-encoded: accountName, email, bankName, accountNumber, iban, accountIdentifier, phone
   isDefault: boolean("is_default").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

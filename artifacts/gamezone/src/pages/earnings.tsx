@@ -13,6 +13,7 @@ import { Wallet, ArrowDownToLine, History, Coins, ArrowUpRight } from "lucide-re
 import { format } from "date-fns";
 import { useCurrency } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
+import { apiFetch, apiFetchJson } from "@/lib/api-fetch";
 
 export function EarningsPage() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -20,7 +21,6 @@ export function EarningsPage() {
   const [payoutProfiles, setPayoutProfiles] = useState<Array<{ id: number; method: string; label: string; maskedDetails: string }>>([]);
   const [selectedProfileId, setSelectedProfileId] = useState("");
   const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
-  const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
   // Balances are stored in the base currency; the visitor sees their local one.
   const { currency, rate, format: formatMoney } = useCurrency();
 
@@ -36,7 +36,7 @@ export function EarningsPage() {
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`${API_BASE}/api/payout-methods`, { credentials: "include", cache: "no-store" })
+    apiFetch("/api/payout-methods", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Unable to load payout methods")))
       .then((data) => { setPayoutMethods(data.methods || []); setPayoutProfiles(data.profiles || []); setSelectedProfileId((current) => current || String(data.profiles?.[0]?.id || "")); })
       .catch(() => undefined);
@@ -70,7 +70,7 @@ export function EarningsPage() {
     }
 
     setIsSubmittingWithdrawal(true);
-    fetch(`${API_BASE}/api/withdrawals`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, payoutProfileId: Number(selectedProfileId) }) })
+    apiFetch("/api/withdrawals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, payoutProfileId: Number(selectedProfileId) }) })
       .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.message || data.error || "Withdrawal failed"); return data; })
       .then(() => { toast({ title: "Withdrawal Requested", description: `${formatMoney(amount)} is pending owner review. No payment has been sent yet.`, variant: "success" }); setWithdrawAmount(""); void refetchUser(); void refetchEarnings(); })
       .catch((error: Error) => toast({ title: error.message.includes("banned") ? "Account Banned" : "Withdrawal Failed", description: error.message, variant: "destructive" }))

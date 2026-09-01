@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { useCurrency, useMoney, BASE_CURRENCY } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 import { useAppAuth } from "@/lib/clerk-auth";
+import { apiFetch } from "@/lib/api-fetch";
 import { User, Calendar, Gamepad2, Coins, ChevronDown, LogOut } from "lucide-react";
 
 const COUNTRY_CODES = [
@@ -57,7 +58,6 @@ const CURRENCY_CODES = [
 ];
 
 const COUNTRY_KEY = "gamezone:country-code";
-const API_BASE = (import.meta.env.VITE_API_URL || "https://gamezoneapi-cp623ub2.manus.space").replace(/\/$/, "");
 
 export function ProfilePage() {
   const [, params] = useRoute("/profile/:id");
@@ -104,7 +104,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    fetch(`${API_BASE}/api/payout-methods`, { credentials: "include", cache: "no-store" }).then((response) => response.json()).then((data) => { setPayoutMethods(data.methods || []); setPayoutProfiles(data.profiles || []); setPayoutMethod((data.methods || ["paypal"])[0]); }).catch(() => undefined);
+    apiFetch("/api/payout-methods", { cache: "no-store" }).then((response) => response.json()).then((data) => { setPayoutMethods(data.methods || []); setPayoutProfiles(data.profiles || []); setPayoutMethod((data.methods || ["paypal"])[0]); }).catch(() => undefined);
   }, [user?.id]);
 
   useEffect(() => {
@@ -156,8 +156,8 @@ export function ProfilePage() {
   const handleCancelEditPayout = () => { setEditingProfileId(null); setPayoutDetails(emptyPayoutDetails); };
   const handleSavePayout = async () => {
     try {
-      const endpoint = editingProfileId ? `${API_BASE}/api/payout-methods/${editingProfileId}` : `${API_BASE}/api/payout-methods`;
-      const response = await fetch(endpoint, { method: editingProfileId ? "PATCH" : "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ countryCode, method: payoutMethod, details: payoutDetails }) });
+      const endpoint = editingProfileId ? `/api/payout-methods/${editingProfileId}` : `/api/payout-methods`;
+      const response = await apiFetch(endpoint, { method: editingProfileId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ countryCode, method: payoutMethod, details: payoutDetails }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not save payout method");
       setPayoutProfiles((current) => editingProfileId ? current.map((profile) => profile.id === editingProfileId ? data : profile) : [data, ...current]);
@@ -171,7 +171,7 @@ export function ProfilePage() {
     if (!supportSubject.trim() || !supportMessage.trim()) { setSupportStatus("Add a subject and message first."); return; }
     setSupportStatus("Sending…");
     try {
-      const response = await fetch(`${API_BASE}/api/support/messages`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject: supportSubject.trim(), message: supportMessage.trim() }) });
+      const response = await apiFetch("/api/support/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subject: supportSubject.trim(), message: supportMessage.trim() }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to send support message");
       setSupportSubject(""); setSupportMessage(""); setSupportStatus("Message sent to Rockcity support.");
@@ -181,9 +181,8 @@ export function ProfilePage() {
   const handleSave = async () => {
     try {
       localStorage.setItem(COUNTRY_KEY, countryCode);
-      const response = await fetch(`${API_BASE}/api/users/me`, {
+      const response = await apiFetch("/api/users/me", {
         method: "PATCH",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ countryCode, currencyCode: preferredCurrency }),
       });
