@@ -44,10 +44,13 @@ export function useAppAuth() {
   }, [clerk, queryClient]);
 
   return {
+    // Profile comes from Railway /api/users/me when available.
     user: clerkSignedIn ? me.data ?? null : null,
-    isLoaded: clerkLoaded && (!clerkSignedIn || !me.isLoading),
-    isSignedIn: Boolean(clerkSignedIn && me.data),
-    isLoading: me.isLoading,
+    // Don't block the whole app on the API — only wait for Clerk.
+    isLoaded: clerkLoaded,
+    // Signed in = Clerk session. Dashboard can still show if /me is slow/down.
+    isSignedIn: Boolean(clerkSignedIn),
+    isLoading: Boolean(clerkSignedIn && me.isLoading),
     error: me.error,
     logout,
   };
