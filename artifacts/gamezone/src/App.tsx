@@ -18,6 +18,7 @@ import { ProfilePage } from '@/pages/profile';
 import { DashboardPage } from '@/pages/dashboard';
 
 import NotFound from '@/pages/not-found';
+import { Gamepad2, Trophy, Zap, Target, Sparkles, Dice5, Crown, Rocket, Star, Swords, Coins, Gift } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,42 +32,44 @@ const queryClient = new QueryClient({
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function PublicLanding() {
-  // Soft decorative tiles — no third-party brand art, no downloads
-  const tiles = [
-    'from-emerald-500/25 to-emerald-900/10',
-    'from-sky-500/20 to-sky-900/10',
-    'from-violet-500/20 to-violet-900/10',
-    'from-amber-500/20 to-amber-900/10',
-    'from-rose-500/15 to-rose-900/10',
-    'from-teal-500/20 to-teal-900/10',
-    'from-lime-500/15 to-lime-900/10',
-    'from-indigo-500/20 to-indigo-900/10',
-    'from-fuchsia-500/15 to-fuchsia-900/10',
-    'from-cyan-500/20 to-cyan-900/10',
-    'from-orange-500/15 to-orange-900/10',
-    'from-emerald-400/20 to-zinc-900/20',
+  // Decorative game-tile background only (original icons, not scraped brand art)
+  const tileIcons = [Gamepad2, Trophy, Zap, Target, Sparkles, Dice5, Crown, Rocket, Star, Swords, Coins, Gift];
+  const tileColors = [
+    'bg-emerald-500/15 text-emerald-400/70',
+    'bg-sky-500/15 text-sky-400/70',
+    'bg-violet-500/15 text-violet-400/70',
+    'bg-amber-500/15 text-amber-400/70',
+    'bg-rose-500/15 text-rose-400/60',
+    'bg-teal-500/15 text-teal-400/70',
+    'bg-lime-500/15 text-lime-400/60',
+    'bg-indigo-500/15 text-indigo-400/70',
+    'bg-fuchsia-500/15 text-fuchsia-400/60',
+    'bg-cyan-500/15 text-cyan-400/70',
+    'bg-orange-500/15 text-orange-400/60',
+    'bg-emerald-400/15 text-emerald-300/70',
   ];
 
   return (
     <main className="relative min-h-[100dvh] overflow-hidden bg-zinc-950 text-zinc-50">
-      {/* Background icon grid */}
-      <div
-        className="pointer-events-none absolute inset-0 select-none"
-        aria-hidden="true"
-      >
-        <div className="absolute inset-0 grid grid-cols-4 gap-3 p-4 opacity-[0.35] sm:grid-cols-6 sm:gap-4 sm:p-6">
-          {tiles.concat(tiles).map((grad, i) => (
-            <div
-              key={i}
-              className={`aspect-square rounded-2xl bg-gradient-to-br ${grad} border border-white/5 shadow-inner`}
-              style={{
-                transform: `rotate(${(i % 5) * 3 - 6}deg) scale(${0.88 + (i % 3) * 0.04})`,
-              }}
-            />
-          ))}
+      <div className="pointer-events-none absolute inset-0 select-none" aria-hidden="true">
+        <div className="absolute inset-0 grid grid-cols-4 gap-3 p-4 opacity-40 sm:grid-cols-6 sm:gap-4 sm:p-6">
+          {Array.from({ length: 24 }).map((_, i) => {
+            const Icon = tileIcons[i % tileIcons.length];
+            const color = tileColors[i % tileColors.length];
+            return (
+              <div
+                key={i}
+                className={`flex aspect-square items-center justify-center rounded-2xl border border-white/5 ${color}`}
+                style={{
+                  transform: `rotate(${(i % 5) * 3 - 6}deg) scale(${0.9 + (i % 3) * 0.03})`,
+                }}
+              >
+                <Icon className="size-7 sm:size-8" strokeWidth={1.5} />
+              </div>
+            );
+          })}
         </div>
-        {/* Fade so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/70 via-zinc-950/85 to-zinc-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/75 via-zinc-950/88 to-zinc-950" />
       </div>
 
       <header className="relative z-10 border-b border-zinc-900/80">
@@ -116,7 +119,7 @@ function PublicLanding() {
         </div>
       </section>
 
-      <section className="border-t border-zinc-900">
+      <section className="relative z-10 border-t border-zinc-900">
         <div className="mx-auto grid max-w-5xl gap-px bg-zinc-900 sm:grid-cols-3">
           {[
             { title: 'Games', body: 'Browse what’s available and jump into a session.' },
@@ -131,7 +134,7 @@ function PublicLanding() {
         </div>
       </section>
 
-      <footer className="border-t border-zinc-900">
+      <footer className="relative z-10 border-t border-zinc-900">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6 text-[12px] text-zinc-600">
           <span>Rock City</span>
           <Link href="/sign-up" className="hover:text-zinc-400">
