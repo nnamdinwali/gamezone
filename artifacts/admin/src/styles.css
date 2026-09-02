@@ -5,10 +5,10 @@ button { font: inherit; cursor: pointer; }
 .loading, .gate { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; color: #8de6a1; }
 .gate h1 { margin: 0; color: #f3fff5; }
 .gate p { color: #97ad9d; }
-.gate button, .refresh { border: 0; border-radius: 10px; padding: 11px 18px; font-weight: 800; color: #06110b; background: #4ade80; }
+.gate button, .refresh { border: 0; border-radius: 8px; padding: 11px 18px; font-weight: 800; color: #06110b; background: #4ade80; }
 .admin-shell { min-height: 100vh; }
 .topbar { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 5vw; border-bottom: 1px solid #1e3b27; background: rgba(5, 18, 10, .9); }
-.brand, .account, .account button, .metric, .panel-title, .heading, .next div { display: flex; align-items: center; }
+.brand, .account, .account button, .metric, .panel-title { display: flex; align-items: center; gap: 10px; padding: 0 0 12px; border-bottom: 1px solid #1e3b27; margin-bottom: 12px; }
 .brand { gap: 10px; color: #70e994; font-weight: 900; letter-spacing: .12em; }
 .account { gap: 18px; color: #9fb5a5; font-size: 13px; }
 .account button { gap: 7px; border: 1px solid #2c4d35; border-radius: 8px; padding: 9px 12px; color: #d9f5df; background: transparent; }
@@ -19,23 +19,23 @@ button { font: inherit; cursor: pointer; }
 .heading p:not(.eyebrow) { max-width: 650px; color: #9fb5a5; }
 .eyebrow { margin: 0 0 8px; color: #4ade80; font-size: 11px; font-weight: 900; letter-spacing: .2em; }
 .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
-.metric { gap: 14px; padding: 20px; border: 1px solid #1f432b; border-radius: 16px; background: rgba(14, 35, 20, .7); }
-.metric-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; color: #4ade80; background: #123b20; }
+.metric { gap: 12px; padding: 12px 0; border: 0; border-radius: 0; background: transparent; border-bottom: 1px solid #1e3b27; }
+.metric-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 0; color: #4ade80; background: transparent; }
 .metric-icon svg { width: 20px; }
 .metric span { display: block; color: #9fb5a5; font-size: 12px; }
 .metric strong { display: block; margin-top: 3px; color: #f3fff5; font-size: 28px; }
 .error { margin-bottom: 20px; padding: 13px 16px; border: 1px solid #7f3e3e; border-radius: 10px; color: #ffd3d3; background: #3a1b1b; }
-.panel, .next { border: 1px solid #1f432b; border-radius: 18px; background: rgba(10, 28, 16, .78); overflow: hidden; }
+.panel, .next { border: 0; border-radius: 0; background: transparent; border-top: 1px solid #1e3b27; padding-top: 20px; }
 .intelligence-panel { margin-bottom: 24px; }
 .intelligence-panel .panel-title h2 { display: flex; align-items: center; gap: 9px; }
 .intelligence-body { padding: 22px 24px 24px; }
 .intelligence-banner { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border: 1px solid #315c3c; border-radius: 13px; background: linear-gradient(120deg, rgba(24, 75, 39, .72), rgba(10, 28, 16, .7)); }
-.intelligence-icon { display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; color: #07120b; background: #d6b44c; }
+.intelligence-icon { display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 8px; color: #07120b; background: #d6b44c; }
 .intelligence-icon svg { width: 21px; }
 .intelligence-banner strong { color: #f7ffe9; }
 .intelligence-banner p { margin: 5px 0 0; color: #b6cdb9; line-height: 1.5; }
 .intelligence-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 18px 0; }
-.intelligence-metrics .metric { padding: 14px; border-radius: 12px; background: rgba(8, 22, 13, .68); }
+.intelligence-metrics .metric { padding: 14px; border-radius: 8px; background: rgba(8, 22, 13, .68); }
 .intelligence-metrics .metric-icon { width: 34px; height: 34px; border-radius: 9px; }
 .intelligence-metrics .metric strong { font-size: 22px; }
 .intelligence-question label { display: block; margin-bottom: 8px; color: #b9d1bc; font-size: 13px; font-weight: 800; }
