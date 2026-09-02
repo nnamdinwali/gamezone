@@ -190,8 +190,7 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           <ClerkLoaded>
             {isSignIn ? (
               <SignIn
-                routing="path"
-                path={`${basePath}/sign-in`}
+                routing="hash"
                 signUpUrl={signUpUrl}
                 forceRedirectUrl={homeUrl}
                 fallbackRedirectUrl={homeUrl}
@@ -199,8 +198,7 @@ function AuthScreen({ mode }: { mode: 'sign-in' | 'sign-up' }) {
               />
             ) : (
               <SignUp
-                routing="path"
-                path={`${basePath}/sign-up`}
+                routing="hash"
                 signInUrl={signInUrl}
                 forceRedirectUrl={homeUrl}
                 fallbackRedirectUrl={homeUrl}
