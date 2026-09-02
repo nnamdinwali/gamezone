@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAppAuth } from "@/lib/clerk-auth";
 import { Link, useLocation } from "wouter";
-import { Bell, Gift, LayoutGrid, LogOut, Ticket, Trophy, UserRound, WalletCards } from "lucide-react";
+import { Bell, Gift, LogOut, Search, List, DollarSign, Trophy, UserRound } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
 import { useNotifications } from "@/lib/notifications";
@@ -9,9 +9,9 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useMoney } from "@/lib/currency";
 
 const bottomLinks = [
-  { href: "/", label: "Earn", icon: LayoutGrid },
-  { href: "/games", label: "My Offers", icon: Ticket },
-  { href: "/earnings", label: "Cashout", icon: WalletCards },
+  { href: "/", label: "Earn", icon: Search },
+  { href: "/games", label: "My Offers", icon: List },
+  { href: "/earnings", label: "Cashout", icon: DollarSign },
   { href: "/leaderboard", label: "Rewards", icon: Trophy },
 ];
 
