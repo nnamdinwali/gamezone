@@ -81,7 +81,7 @@ export function EarningsPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold font-heading uppercase tracking-tighter text-glow-accent">Your Vault</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-glow-accent">Your Vault</h1>
         <p className="text-muted-foreground">Manage your earnings and withdraw to your wallet.</p>
       </div>
 
@@ -214,9 +214,8 @@ export function EarningsPage() {
                 })
               ) : (
                 <EmptyState
-                  icon={<History className="h-7 w-7" />}
-                  title="Nothing here yet"
-                  message="Every cashout and gameplay reward will show up here the moment you start earning."
+                  title="No transactions"
+                  message="Rewards and withdrawals will show up here."
                 />
               )}
             </div>
