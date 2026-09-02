@@ -108,12 +108,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-            <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/96 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden"
- aria-label="Primary">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/96 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden"
+        aria-label="Primary"
+      >
         <div className="mx-auto grid max-w-xl grid-cols-4">
           {bottomLinks.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? location === "/" : location.startsWith(href);
-            return <Link key={href} href={href} className={`flex flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}><Icon className="h-6 w-6" strokeWidth={active ? 2.5 : 1.8} />{label}</Link>;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-col items-center gap-1.5 py-1.5 text-[11px] font-medium ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+                    active ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />
+                </span>
+                {label}
+              </Link>
+            );
           })}
         </div>
       </nav>
