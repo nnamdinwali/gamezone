@@ -141,6 +141,11 @@ export function HomePage() {
 
   return (
     <>
+      {!user && !isUserLoading && (
+        <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Account profile is not ready on the server yet. You are signed in — games and balance will appear once the backend finishes setup.
+        </div>
+      )}
       {showBonusPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#02050a]/80 px-5 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="bonus-title">
           <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-[#ffe56a]/70 bg-[#151729] p-7 text-center shadow-[0_0_80px_rgba(255,211,59,.42)]">
