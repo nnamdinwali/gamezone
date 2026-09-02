@@ -25,9 +25,9 @@ export function GamesPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold font-heading uppercase tracking-tighter">My Offers</h1>
-        <p className="text-muted-foreground">Games you are currently playing appear here.</p>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">My Offers</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Games you are currently playing.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -78,10 +78,9 @@ export function GamesPage() {
         ) : (
           <div className="col-span-full">
             <EmptyState
-              icon={<Gamepad2 className="h-7 w-7" />}
-              title="Nothing running right now"
-              message="Pick a game from Earn and it'll show up here the moment you start playing."
-              action={<Link href="/" className="inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Go to Earn</Link>}
+              title="No active games"
+              message="Start a game from Earn and it will show up here."
+              action={<Link href="/" className="text-sm font-medium text-primary hover:underline">Go to Earn</Link>}
             />
           </div>
         )}
