@@ -5,6 +5,10 @@ import { getCurrentAppUser } from "../lib/current-user";
 
 const router = Router();
 
+// Must match CASHOUT_TARGET on the frontend (artifacts/gamezone/src/pages/home.tsx) —
+// that's what the "Next cashout" progress bar promises, so it has to be true here too.
+const MINIMUM_WITHDRAWAL_AMOUNT = 2.5;
+
 // POST /withdrawals — the signed-in player requests a cashout against one of their saved payout methods
 router.post("/withdrawals", async (req, res) => {
   try {
@@ -14,6 +18,9 @@ router.post("/withdrawals", async (req, res) => {
     const { amount, payoutProfileId } = req.body as { amount?: number; payoutProfileId?: number };
     if (!amount || !payoutProfileId) return res.status(400).json({ error: "amount and payoutProfileId are required" });
     if (amount <= 0) return res.status(400).json({ error: "amount must be positive" });
+    if (amount < MINIMUM_WITHDRAWAL_AMOUNT) {
+      return res.status(400).json({ error: `Minimum withdrawal is ${MINIMUM_WITHDRAWAL_AMOUNT}` });
+    }
     if (user.balance < amount) return res.status(400).json({ error: "Insufficient balance" });
 
     const [profile] = await db

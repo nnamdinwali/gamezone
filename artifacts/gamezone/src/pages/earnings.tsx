@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { useCurrency } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
 import { apiFetch, apiFetchJson } from "@/lib/api-fetch";
+import { CASHOUT_TARGET } from "@/pages/home";
 
 export function EarningsPage() {
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -55,6 +56,11 @@ export function EarningsPage() {
 
     if (isNaN(amount) || amount <= 0) {
       toast({ title: "Invalid Amount", description: "Please enter a valid amount.", variant: "destructive" });
+      return;
+    }
+
+    if (amount < CASHOUT_TARGET) {
+      toast({ title: "Below minimum", description: `The minimum withdrawal is ${formatMoney(CASHOUT_TARGET)}.`, variant: "destructive" });
       return;
     }
 
