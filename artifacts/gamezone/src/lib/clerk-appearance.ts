@@ -1,5 +1,6 @@
 import type { Appearance } from '@clerk/types';
 
+/** High-contrast dark form so fields are actually visible on mobile */
 export const clerkAppearance: Appearance = {
   layout: {
     socialButtonsPlacement: 'top',
@@ -8,13 +9,13 @@ export const clerkAppearance: Appearance = {
   },
   variables: {
     colorPrimary: '#22c55e',
-    colorText: '#f4f4f5',
+    colorText: '#fafafa',
     colorTextSecondary: '#a1a1aa',
     colorTextOnPrimaryBackground: '#052e16',
-    colorBackground: '#09090b',
+    colorBackground: 'transparent',
     colorInputBackground: '#18181b',
     colorInputText: '#fafafa',
-    colorNeutral: '#71717a',
+    colorNeutral: '#a1a1aa',
     colorDanger: '#f87171',
     borderRadius: '10px',
     fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, sans-serif',
@@ -23,32 +24,35 @@ export const clerkAppearance: Appearance = {
   },
   elements: {
     rootBox: 'w-full',
-    cardBox: 'w-full shadow-none',
-    card: 'bg-transparent shadow-none border-0 p-0 gap-4',
+    cardBox: 'w-full shadow-none !bg-transparent',
+    card: '!bg-transparent shadow-none border-0 p-0 gap-4',
+    // Hide Clerk's own title (we show ours above)
     header: 'hidden',
+    headerTitle: 'hidden',
+    headerSubtitle: 'hidden',
     footer: 'hidden',
     footerAction: 'hidden',
     main: 'gap-4',
     form: 'gap-3',
     formFieldRow: 'gap-1.5',
-    formFieldLabel: 'text-[13px] font-medium text-zinc-400',
+    formFieldLabel: '!text-zinc-300 text-[13px] font-medium',
     formFieldInput:
-      'h-12 rounded-[10px] border border-zinc-800 bg-zinc-900 text-zinc-50 text-[15px] placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-0 shadow-none',
+      '!h-12 !rounded-[10px] !border !border-zinc-600 !bg-zinc-900 !text-white text-[15px] placeholder:!text-zinc-500 focus:!border-emerald-500 focus:ring-0 shadow-none',
     formButtonPrimary:
-      'h-12 rounded-[10px] bg-emerald-500 text-emerald-950 text-[15px] font-semibold hover:bg-emerald-400 shadow-none',
+      '!h-12 !rounded-[10px] !bg-emerald-500 !text-emerald-950 text-[15px] font-semibold hover:!bg-emerald-400 shadow-none',
     formButtonPrimaryIcon: 'hidden',
     socialButtonsBlockButton:
-      'h-12 rounded-[10px] border border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:border-zinc-700',
-    socialButtonsBlockButtonText: 'text-[15px] font-medium text-zinc-100',
+      '!h-12 !rounded-[10px] !border !border-zinc-600 !bg-zinc-900 !text-white hover:!bg-zinc-800',
+    socialButtonsBlockButtonText: '!text-white text-[15px] font-medium',
     socialButtonsProviderIcon: 'w-5 h-5',
     dividerRow: 'my-1',
-    dividerLine: 'bg-zinc-800',
-    dividerText: 'text-zinc-600 text-xs uppercase tracking-wider',
-    formFieldInputShowPasswordButton: 'text-zinc-500 hover:text-zinc-300',
-    identityPreviewEditButton: 'text-emerald-400',
-    formFieldErrorText: 'text-red-400 text-[12px]',
-    alert: 'rounded-[10px] border border-zinc-800 bg-zinc-900',
-    alertText: 'text-[13px] text-zinc-300',
-    otpCodeFieldInput: 'border-zinc-800 bg-zinc-900 text-zinc-50',
+    dividerLine: '!bg-zinc-700',
+    dividerText: '!text-zinc-400 text-xs uppercase tracking-wider',
+    formFieldInputShowPasswordButton: '!text-zinc-400 hover:!text-zinc-200',
+    identityPreviewEditButton: '!text-emerald-400',
+    formFieldErrorText: '!text-red-400 text-[12px]',
+    alert: 'rounded-[10px] border border-zinc-700 bg-zinc-900',
+    alertText: 'text-[13px] text-zinc-200',
+    otpCodeFieldInput: '!border-zinc-600 !bg-zinc-900 !text-white',
   },
 };
