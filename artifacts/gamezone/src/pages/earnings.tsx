@@ -3,13 +3,11 @@ import {
   useListEarnings, getListEarningsQueryKey, 
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ArrowDownToLine, History, ArrowUpRight } from "lucide-react";
+
 import { EmptyState } from "@/components/empty-state";
 import { format } from "date-fns";
 import { useCurrency } from "@/lib/currency";
@@ -79,138 +77,144 @@ export function EarningsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="mx-auto max-w-lg space-y-8">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Cashout</h1>
         <p className="mt-1 text-sm text-muted-foreground">Balance and withdrawals.</p>
       </div>
 
       {isBanned && (
-        <section role="alert" className="rounded-2xl border-2 border-red-500/80 bg-red-950/70 p-5 text-red-100 shadow-[0_0_28px_rgba(239,68,68,.18)]">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">Account restricted</p>
-          <h2 className="mt-2 text-xl font-bold">Withdrawals are unavailable</h2>
-          <p className="mt-2 text-sm leading-6 text-red-100/90">Your Rockcity account has been banned, so you cannot access earnings or request a withdrawal. {bannedUser?.banReason ? `Reason: ${bannedUser.banReason}` : "Please contact support if you believe this is a mistake."}</p>
+        <section role="alert" className="rounded-xl border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-100">
+          <p className="font-medium">Withdrawals unavailable</p>
+          <p className="mt-1 text-red-100/80">
+            Your account is restricted.
+            {bannedUser?.banReason ? ` Reason: ${bannedUser.banReason}` : ""}
+          </p>
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Balance Card */}
-        <Card className="lg:col-span-1 h-fit border-border/60 bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Available balance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              {isUserLoading ? (
-                <Skeleton className="h-10 w-36" />
-              ) : (
-                <p className="text-3xl font-semibold tracking-tight text-foreground">{formatMoney(user?.balance || 0)}</p>
-              )}
-              <p className="mt-1 text-sm text-muted-foreground">
-                Lifetime: {isUserLoading ? "—" : formatMoney(user?.totalEarnings || 0)}
+      <section className="space-y-5">
+        <div>
+          {isUserLoading ? (
+            <Skeleton className="h-10 w-36" />
+          ) : (
+            <p className="text-3xl font-semibold tracking-tight text-foreground">
+              {formatMoney(user?.balance || 0)}
+            </p>
+          )}
+          <p className="mt-1 text-sm text-muted-foreground">
+            Lifetime: {isUserLoading ? "—" : formatMoney(user?.totalEarnings || 0)}
+          </p>
+        </div>
+
+        <form onSubmit={handleWithdraw} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="payoutProfile" className="text-xs font-medium text-muted-foreground">
+              Payout method
+            </Label>
+            {payoutProfiles.length ? (
+              <select
+                id="payoutProfile"
+                value={selectedProfileId}
+                onChange={(event) => setSelectedProfileId(event.target.value)}
+                disabled={isBanned}
+                className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+              >
+                <option value="">Select saved method</option>
+                {payoutProfiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label || profile.maskedDetails}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No saved payout method yet — add one from your profile.
+                {payoutMethods.length ? ` Available: ${payoutMethods.join(", ")}.` : ""}
               </p>
-            </div>
+            )}
+          </div>
 
-            <div className="border-t border-border pt-5">
-              <form onSubmit={handleWithdraw} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="payoutProfile" className="text-xs font-medium text-muted-foreground">Payout method</Label>
-                  {payoutProfiles.length ? <select id="payoutProfile" value={selectedProfileId} onChange={(event) => setSelectedProfileId(event.target.value)} disabled={isBanned} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm"><option value="">Select saved method</option>{payoutProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label || profile.maskedDetails}</option>)}</select> : <p className="rounded-2xl bg-secondary/40 p-3 text-sm text-muted-foreground">No saved payout method yet — add one from your Profile page. Available here: {payoutMethods.join(", ") || "PayPal"}.</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="amount" className="text-xs font-medium text-muted-foreground">Withdraw amount ({currency})</Label>
-                  <Input 
-                    id="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="h-11 font-mono"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    disabled={isBanned || isSubmittingWithdrawal}
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  variant="accent" 
-                  className="w-full h-12 text-base"
-                  disabled={isBanned || isSubmittingWithdrawal || !withdrawAmount}
-                >
-                  {isBanned ? "Withdrawal locked" : isSubmittingWithdrawal ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
-                </Button>
-              </form>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="text-xs font-medium text-muted-foreground">
+              Withdraw amount ({currency})
+            </Label>
+            <Input
+              id="amount"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              className="h-11 font-mono"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              disabled={isBanned || isSubmittingWithdrawal}
+            />
+          </div>
 
-        {/* Transaction History */}
-        <Card className="lg:col-span-2 flex flex-col">
-          <CardHeader className="border-b border-border bg-muted/20">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <History className="w-5 h-5 text-primary" /> Transaction History
-            </CardTitle>
-            <CardDescription>Recent rewards and withdrawals.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 flex-1">
-            <div className="divide-y divide-border">
-              {isEarningsLoading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="p-4 flex items-center justify-between">
-                    <div className="flex gap-4 items-center">
-                      <Skeleton className="w-10 h-10 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="w-32 h-4" />
-                        <Skeleton className="w-24 h-3" />
-                      </div>
-                    </div>
-                    <Skeleton className="w-20 h-6" />
+          <Button
+            type="submit"
+            className="h-11 w-full"
+            disabled={isBanned || isSubmittingWithdrawal || !withdrawAmount}
+          >
+            {isBanned
+              ? "Withdrawal locked"
+              : isSubmittingWithdrawal
+                ? "Submitting…"
+                : "Request withdrawal"}
+          </Button>
+        </form>
+      </section>
+
+      <section className="space-y-3 border-t border-border/60 pt-6">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Transaction history</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">Recent rewards and withdrawals.</p>
+        </div>
+
+        <div className="divide-y divide-border/60">
+          {isEarningsLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-3">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))
+          ) : earnings?.length ? (
+            earnings.map((earning) => {
+              const isWithdrawal = earning.type === "withdrawal";
+              return (
+                <div key={earning.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {isWithdrawal ? "Withdrawal" : "Reward"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(earning.createdAt), "MMM d, yyyy · h:mm a")}
+                    </p>
                   </div>
-                ))
-              ) : earnings?.length ? (
-                earnings.map((earning) => {
-                  const isWithdrawal = earning.type === 'withdrawal';
-                  return (
-                    <div key={earning.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                      <div className="flex gap-4 items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${
-                          isWithdrawal ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-success/10 border-success/30 text-success'
-                        }`}>
-                          {isWithdrawal ? <ArrowDownToLine className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                        </div>
-                        <div>
-                          <p className="font-bold uppercase tracking-wide text-sm">{isWithdrawal ? 'Withdrawal' : 'Game Reward'}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{format(new Date(earning.createdAt), "MMM d, yyyy • h:mm a")}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <div className={`font-mono font-bold text-lg flex items-center gap-1 ${
-                          isWithdrawal ? 'text-destructive' : 'text-success'
-                        }`}>
-                          {isWithdrawal ? '-' : '+'}{formatMoney(earning.amount)}
-                        </div>
-                        
-                        <Badge variant={
-                          earning.status === 'completed' ? 'success' : 
-                          earning.status === 'pending' ? 'outline' : 'destructive'
-                        } className="hidden sm:inline-flex text-[10px]">
-                          {earning.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <EmptyState
-                  title="No transactions"
-                  message="Rewards and withdrawals will show up here."
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="text-right">
+                    <p
+                      className={`font-mono text-sm font-medium ${
+                        isWithdrawal ? "text-red-400" : "text-emerald-400"
+                      }`}
+                    >
+                      {isWithdrawal ? "-" : "+"}
+                      {formatMoney(earning.amount)}
+                    </p>
+                    <p className="text-[11px] capitalize text-muted-foreground">{earning.status}</p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <EmptyState
+              title="No transactions"
+              message="Rewards and withdrawals will show up here."
+            />
+          )}
+        </div>
+      </section>
     </div>
   );
 }
