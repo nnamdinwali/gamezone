@@ -218,10 +218,7 @@ export function HomePage() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Trophy className="h-7 w-7 text-accent" fill="currentColor" strokeWidth={1.5} />
-          <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Best for You</h1>
-        </div>
+        <h2 className="text-lg font-semibold tracking-tight text-white">Best for you</h2>
 
         {featured ? (
           <OfferCard game={featured} featured formatCurrency={formatCurrency} disabled={isBanned} />
@@ -229,20 +226,16 @@ export function HomePage() {
           <div className="h-[390px] animate-pulse rounded-3xl bg-[#1b1c2b]" />
         ) : (
           <EmptyState
-            icon={<Trophy className="h-7 w-7" />}
-            title="Your top pick is loading"
-            message="We're lining up the best-paying game for you — check back in a moment, or browse everything below."
+            title="No offers yet"
+            message="Games will show up here when they are available."
           />
         )}
       </section>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Gift className="h-7 w-7 text-accent" fill="currentColor" strokeWidth={1.5} />
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">More Offers</h2>
-          </div>
-          <Link href="/games" className="flex items-center gap-1 text-sm font-semibold text-white hover:text-[#00d57e]">View all <ChevronRight className="h-5 w-5" /></Link>
+          <h2 className="text-lg font-semibold tracking-tight text-white">More offers</h2>
+          <Link href="/games" className="text-sm text-muted-foreground hover:text-white">View all</Link>
         </div>
 
         {offers.length > 0 ? (
@@ -250,16 +243,16 @@ export function HomePage() {
             {offers.map((game) => <OfferCard key={game.id} game={game} formatCurrency={formatCurrency} disabled={isBanned} />)}
           </div>
         ) : (
-          <Link href="/games" className="group relative flex min-h-40 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[#171827] px-5 py-10 text-[#aaa9bb] transition hover:text-white md:min-h-52 md:text-lg">
-            <div aria-hidden className="pointer-events-none absolute -top-10 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl transition group-hover:bg-primary/20" />
-            <Search className="relative h-5 w-5" /> <span className="relative">Browse all games</span>
-          </Link>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No more offers right now.{" "}
+            <Link href="/games" className="text-primary hover:underline">Browse games</Link>
+          </p>
         )}
       </section>
 
-      <div className="rounded-2xl border border-white/10 bg-[#171827] px-4 py-3 text-center text-xs text-[#8f8ea1]">
-        {gamesPlayed > 0 ? `${gamesPlayed} games played · Keep going to unlock more rewards` : "Play your first game to start earning rewards"}
-      </div>
+      <p className="pb-2 text-center text-xs text-muted-foreground">
+        {gamesPlayed > 0 ? `${gamesPlayed} games played` : "Play a game to start earning"}
+      </p>
       </div>
     </>
   );
