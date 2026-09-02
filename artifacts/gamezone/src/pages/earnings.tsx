@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Wallet, ArrowDownToLine, History, Coins, ArrowUpRight } from "lucide-react";
+import { ArrowDownToLine, History, ArrowUpRight } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { format } from "date-fns";
 import { useCurrency } from "@/lib/currency";
@@ -80,9 +80,9 @@ export function EarningsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="space-y-2">
-        <h1 className="text-xl font-semibold tracking-tight text-glow-accent">Your Vault</h1>
-        <p className="text-muted-foreground">Manage your earnings and withdraw to your wallet.</p>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Cashout</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Balance and withdrawals.</p>
       </div>
 
       {isBanned && (
@@ -95,52 +95,41 @@ export function EarningsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Balance Card */}
-        <Card className="lg:col-span-1 bg-gradient-to-br from-card to-card/50 border-accent/20 relative overflow-hidden h-fit">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
-            <Wallet className="w-32 h-32" />
-          </div>
-          <CardHeader>
-            <CardTitle className="text-lg text-muted-foreground tracking-widest font-sans flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-accent" /> Available Balance
-            </CardTitle>
+        <Card className="lg:col-span-1 h-fit border-border/60 bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Available balance</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-8 relative z-10">
+          <CardContent className="space-y-6">
             <div>
               {isUserLoading ? (
-                <Skeleton className="h-16 w-48" />
+                <Skeleton className="h-10 w-36" />
               ) : (
-                <div className="flex items-baseline gap-2 text-glow-accent text-accent">
-                  <Coins className="w-8 h-8" />
-                  <span className="text-5xl font-mono font-bold tracking-tighter">{formatMoney(user?.balance || 0)}</span>
-                </div>
+                <p className="text-3xl font-semibold tracking-tight text-foreground">{formatMoney(user?.balance || 0)}</p>
               )}
-              <p className="text-sm text-muted-foreground mt-2 font-mono">
-                Total lifetime earned: {isUserLoading ? <Skeleton className="w-16 h-4 inline-block" /> : formatMoney(user?.totalEarnings || 0)}
+              <p className="mt-1 text-sm text-muted-foreground">
+                Lifetime: {isUserLoading ? "—" : formatMoney(user?.totalEarnings || 0)}
               </p>
             </div>
 
-            <div className="pt-6 border-t border-border">
+            <div className="border-t border-border pt-5">
               <form onSubmit={handleWithdraw} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="payoutProfile" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Payout method</Label>
+                  <Label htmlFor="payoutProfile" className="text-xs font-medium text-muted-foreground">Payout method</Label>
                   {payoutProfiles.length ? <select id="payoutProfile" value={selectedProfileId} onChange={(event) => setSelectedProfileId(event.target.value)} disabled={isBanned} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm"><option value="">Select saved method</option>{payoutProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label || profile.maskedDetails}</option>)}</select> : <p className="rounded-2xl bg-secondary/40 p-3 text-sm text-muted-foreground">No saved payout method yet — add one from your Profile page. Available here: {payoutMethods.join(", ") || "PayPal"}.</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="amount" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Withdraw Amount ({currency})</Label>
-                  <div className="relative">
-                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      id="amount"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-10 font-mono text-lg h-12"
-                      value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
-                      disabled={isBanned || isSubmittingWithdrawal}
-                    />
-                  </div>
+                  <Label htmlFor="amount" className="text-xs font-medium text-muted-foreground">Withdraw amount ({currency})</Label>
+                  <Input 
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="h-11 font-mono"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    disabled={isBanned || isSubmittingWithdrawal}
+                  />
                 </div>
                 <Button 
                   type="submit" 
@@ -148,7 +137,7 @@ export function EarningsPage() {
                   className="w-full h-12 text-base"
                   disabled={isBanned || isSubmittingWithdrawal || !withdrawAmount}
                 >
-                  {isBanned ? "WITHDRAWAL LOCKED" : isSubmittingWithdrawal ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
+                  {isBanned ? "Withdrawal locked" : isSubmittingWithdrawal ? "PROCESSING..." : "REQUEST WITHDRAWAL"} <ArrowDownToLine className="w-4 h-4 ml-2" />
                 </Button>
               </form>
             </div>
@@ -161,7 +150,7 @@ export function EarningsPage() {
             <CardTitle className="text-xl flex items-center gap-2">
               <History className="w-5 h-5 text-primary" /> Transaction History
             </CardTitle>
-            <CardDescription>Your recent gameplay rewards and withdrawals.</CardDescription>
+            <CardDescription>Recent rewards and withdrawals.</CardDescription>
           </CardHeader>
           <CardContent className="p-0 flex-1">
             <div className="divide-y divide-border">
