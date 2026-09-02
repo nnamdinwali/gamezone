@@ -6,3 +6,4 @@ export * from "./milestones";
 export * from "./payout_methods";
 export * from "./support_messages";
 export * from "./notifications";
+export * from "./intelligence";

@@ -12,6 +12,7 @@ import { useCurrentUser } from "@/lib/current-user";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
 import { apiFetch } from "@/lib/api-fetch";
+import { EmptyState } from "@/components/empty-state";
 
 export const CASHOUT_TARGET = 2.5;
 
@@ -227,7 +228,11 @@ export function HomePage() {
         ) : isGamesLoading ? (
           <div className="h-[390px] animate-pulse rounded-3xl bg-[#1b1c2b]" />
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-[#1b1c2b] p-8 text-center text-[#aaa9bb]">No offers are available yet.</div>
+          <EmptyState
+            icon={<Trophy className="h-7 w-7" />}
+            title="Your top pick is loading"
+            message="We're lining up the best-paying game for you — check back in a moment, or browse everything below."
+          />
         )}
       </section>
 
@@ -245,7 +250,10 @@ export function HomePage() {
             {offers.map((game) => <OfferCard key={game.id} game={game} formatCurrency={formatCurrency} disabled={isBanned} />)}
           </div>
         ) : (
-          <Link href="/games" className="flex min-h-40 items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-[#171827] px-5 py-10 text-[#aaa9bb] hover:text-white md:min-h-52 md:text-lg"><Search className="h-5 w-5" /> Browse all games</Link>
+          <Link href="/games" className="group relative flex min-h-40 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[#171827] px-5 py-10 text-[#aaa9bb] transition hover:text-white md:min-h-52 md:text-lg">
+            <div aria-hidden className="pointer-events-none absolute -top-10 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl transition group-hover:bg-primary/20" />
+            <Search className="relative h-5 w-5" /> <span className="relative">Browse all games</span>
+          </Link>
         )}
       </section>
 

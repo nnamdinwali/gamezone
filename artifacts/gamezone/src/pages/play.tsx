@@ -223,9 +223,10 @@ export function PlayPage() {
             sandbox="allow-scripts allow-same-origin"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/50 border-4 border-dashed border-border/50 m-4 rounded-xl max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)]">
-             <AlertTriangle className="w-12 h-12 mb-4" />
-             <p className="font-mono">Invalid Game URL</p>
+          <div className="w-full h-full flex flex-col items-center justify-center text-center text-destructive m-4 rounded-2xl bg-destructive/5 max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)]">
+             <AlertTriangle className="w-10 h-10 mb-3" />
+             <p className="font-semibold">This game link isn't working right now</p>
+             <p className="mt-1 text-sm text-muted-foreground">We've flagged it — try another game while it gets sorted out.</p>
           </div>
         )}
       </div>

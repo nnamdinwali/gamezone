@@ -12,6 +12,7 @@ import payoutMethodsRouter from "./payout_methods";
 import supportMessagesRouter from "./support_messages";
 import notificationsRouter from "./notifications";
 import withdrawalsRouter from "./withdrawals";
+import intelligenceRouter from "./intelligence";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(payoutMethodsRouter);
 router.use(supportMessagesRouter);
 router.use(notificationsRouter);
 router.use(withdrawalsRouter);
+router.use(intelligenceRouter);
 
 export default router;

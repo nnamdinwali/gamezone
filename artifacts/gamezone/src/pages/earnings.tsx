@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Wallet, ArrowDownToLine, History, Coins, ArrowUpRight } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { format } from "date-fns";
 import { useCurrency } from "@/lib/currency";
 import { useCurrentUser } from "@/lib/current-user";
@@ -122,7 +123,7 @@ export function EarningsPage() {
               <form onSubmit={handleWithdraw} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="payoutProfile" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Payout method</Label>
-                  {payoutProfiles.length ? <select id="payoutProfile" value={selectedProfileId} onChange={(event) => setSelectedProfileId(event.target.value)} disabled={isBanned} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm"><option value="">Select saved method</option>{payoutProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label || profile.maskedDetails}</option>)}</select> : <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">No saved payout method. Add one from your Profile page. Available here: {payoutMethods.join(", ") || "PayPal"}.</p>}
+                  {payoutProfiles.length ? <select id="payoutProfile" value={selectedProfileId} onChange={(event) => setSelectedProfileId(event.target.value)} disabled={isBanned} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm"><option value="">Select saved method</option>{payoutProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label || profile.maskedDetails}</option>)}</select> : <p className="rounded-2xl bg-secondary/40 p-3 text-sm text-muted-foreground">No saved payout method yet — add one from your Profile page. Available here: {payoutMethods.join(", ") || "PayPal"}.</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="amount" className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Withdraw Amount ({currency})</Label>
@@ -212,9 +213,11 @@ export function EarningsPage() {
                   );
                 })
               ) : (
-                <div className="p-12 text-center text-muted-foreground">
-                  No transactions found. Start playing games to earn!
-                </div>
+                <EmptyState
+                  icon={<History className="h-7 w-7" />}
+                  title="Nothing here yet"
+                  message="Every cashout and gameplay reward will show up here the moment you start earning."
+                />
               )}
             </div>
           </CardContent>

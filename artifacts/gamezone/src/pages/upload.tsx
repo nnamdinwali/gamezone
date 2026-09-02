@@ -161,7 +161,7 @@ export function UploadPage() {
                 )}
               />
 
-              <div className="space-y-6 p-6 rounded-xl border border-dashed border-border bg-background/50">
+              <div className="space-y-6 p-6 rounded-xl bg-secondary/40">
                 <h3 className="font-heading font-bold uppercase tracking-wider text-sm flex items-center gap-2">
                   <Link2 className="w-4 h-4 text-accent" /> Links & Assets
                 </h3>

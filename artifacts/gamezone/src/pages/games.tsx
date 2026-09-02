@@ -6,6 +6,7 @@ import { Gamepad2, Coins, Users } from "lucide-react";
 import { useCurrentUser } from "@/lib/current-user";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
+import { EmptyState } from "@/components/empty-state";
 
 export function GamesPage() {
   const { data: currentUser } = useCurrentUser();
@@ -75,10 +76,13 @@ export function GamesPage() {
             return card;
           })
         ) : (
-          <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/30 py-20 text-center">
-            <Gamepad2 className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-            <h3 className="mb-2 font-heading text-xl font-bold uppercase">No active games</h3>
-            <p className="text-muted-foreground">Start a game from Earn and it will appear here while you are playing.</p>
+          <div className="col-span-full">
+            <EmptyState
+              icon={<Gamepad2 className="h-7 w-7" />}
+              title="Nothing running right now"
+              message="Pick a game from Earn and it'll show up here the moment you start playing."
+              action={<Link href="/" className="inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">Go to Earn</Link>}
+            />
           </div>
         )}
       </div>
