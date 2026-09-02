@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAppAuth } from "@/lib/clerk-auth";
 import { Link, useLocation } from "wouter";
-import { Bell, Gift, LogOut, UserRound } from "lucide-react";
+import { Bell, Gift, LogOut, Ticket, UserRound } from "lucide-react";
 import { IconEarn, IconOffers, IconCashout, IconRewards } from "./tab-icons";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
