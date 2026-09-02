@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAppAuth } from "@/lib/clerk-auth";
 import { Link, useLocation } from "wouter";
-import { Bell, Gift, LogOut, Search, List, DollarSign, Trophy, UserRound } from "lucide-react";
+import { Bell, Gift, LogOut, UserRound } from "lucide-react";
+import { IconEarn, IconOffers, IconCashout, IconRewards } from "./tab-icons";
 import { Toaster } from "@/components/ui/toaster";
 import { useCurrentUser } from "@/lib/current-user";
 import { useNotifications } from "@/lib/notifications";
@@ -9,10 +10,10 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useMoney } from "@/lib/currency";
 
 const bottomLinks = [
-  { href: "/", label: "Earn", icon: Search },
-  { href: "/games", label: "My Offers", icon: List },
-  { href: "/earnings", label: "Cashout", icon: DollarSign },
-  { href: "/leaderboard", label: "Rewards", icon: Trophy },
+  { href: "/", label: "Earn", icon: IconEarn },
+  { href: "/games", label: "My Offers", icon: IconOffers },
+  { href: "/earnings", label: "Cashout", icon: IconCashout },
+  { href: "/leaderboard", label: "Rewards", icon: IconRewards },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -119,16 +120,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-1.5 py-1.5 text-[11px] font-medium ${
-                  active ? "text-primary" : "text-muted-foreground"
+                className={`flex flex-col items-center gap-1 py-1 text-[11px] font-medium ${
+                  active ? "text-[#00c853]" : "text-[#8b8b9a]"
                 }`}
               >
                 <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
-                    active ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"
+                  className={`relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] ${
+                    active ? "bg-[#00c853] text-[#0b0b12]" : "bg-transparent"
                   }`}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />
+                  <Icon className="h-[22px] w-[22px]" />
                 </span>
                 {label}
               </Link>
