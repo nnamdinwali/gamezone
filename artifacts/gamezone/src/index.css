@@ -133,20 +133,7 @@
   }
 }
 
-/* clerk overrides — hide development ribbon, force dark inputs, no button arrow */
-.cl-badge,
-.cl-internal-b3fm6y,
-[class*="cl-badge"],
-[data-localization-key="badge__default"] {
-  display: none !important;
-}
-
-.cl-formButtonPrimary svg,
-.cl-formButtonPrimary .cl-buttonArrowIcon,
-.cl-buttonArrowIcon {
-  display: none !important;
-}
-
+/* clerk: dark inputs only — do not hide form internals */
 .cl-formFieldInput,
 input.cl-formFieldInput {
   background-color: #18181b !important;
