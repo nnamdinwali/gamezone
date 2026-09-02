@@ -197,67 +197,45 @@ export function ProfilePage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       {/* Header */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-primary">
-          <User className="w-5 h-5" />
-          <span className="text-sm font-bold uppercase tracking-wider">Profile</span>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          Your account details and payout preferences.
-        </p>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Profile</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Account details and payout preferences.</p>
       </div>
 
       {/* User Card */}
-      <Card className="rounded-3xl border border-border bg-card overflow-hidden">
-        <CardContent className="p-6 flex items-center gap-4">
-          <Avatar className="w-20 h-20 rounded-full border-2 border-primary/50 bg-primary/20 text-primary">
-            <AvatarImage src={user.avatarUrl || ""} className="rounded-full object-cover" />
-            <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-3xl font-bold">
-              {avatarInitial}
-            </AvatarFallback>
-          </Avatar>
-          <div className="space-y-1 min-w-0">
-            <h2 className="text-xl font-bold font-heading truncate">{displayName || user.username}</h2>
-            <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
-            <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-4">
+        <Avatar className="h-14 w-14">
+          <AvatarImage src={user.avatarUrl || ""} className="object-cover" />
+          <AvatarFallback className="bg-secondary text-base font-medium text-foreground">
+            {avatarInitial}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold text-foreground">{displayName || user.username}</h2>
+          <p className="truncate text-sm text-muted-foreground">@{user.username}</p>
+          <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+        </div>
+      </div>
 
-      {/* Stats Cards */}
-      <div className="space-y-4">
-        <Card className="rounded-2xl border border-border bg-card">
-          <CardContent className="p-5 space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Member Since
-            </p>
-            <p className="text-2xl font-bold font-heading">{memberSince}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-border bg-card">
-          <CardContent className="p-5 space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Games Played
-            </p>
-            <p className="text-2xl font-bold font-heading">{gamesPlayed}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-border bg-card">
-          <CardContent className="p-5 space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Lifetime Earnings
-            </p>
-            <p className="text-2xl font-bold font-heading">{formatCurrency(totalEarnings)}</p>
-          </CardContent>
-        </Card>
+      <div className="divide-y divide-border/60 border-y border-border/60">
+        <div className="flex items-center justify-between py-3">
+          <span className="text-sm text-muted-foreground">Member since</span>
+          <span className="text-sm font-medium text-foreground">{memberSince}</span>
+        </div>
+        <div className="flex items-center justify-between py-3">
+          <span className="text-sm text-muted-foreground">Games played</span>
+          <span className="text-sm font-medium text-foreground">{gamesPlayed}</span>
+        </div>
+        <div className="flex items-center justify-between py-3">
+          <span className="text-sm text-muted-foreground">Lifetime earnings</span>
+          <span className="text-sm font-medium text-foreground">{formatCurrency(totalEarnings)}</span>
+        </div>
       </div>
 
       {/* Edit Details */}
-      <Card className="rounded-2xl border border-border bg-card">
+      <Card className="border-0 bg-transparent shadow-none">
         <CardContent className="p-5 space-y-6">
-          <h3 className="text-lg font-bold font-heading">Edit details</h3>
+          <h3 className="text-sm font-semibold text-foreground">Edit details</h3>
 
           <div className="space-y-2">
             <Label htmlFor="displayName" className="text-sm text-muted-foreground font-normal">
@@ -317,7 +295,7 @@ export function ProfilePage() {
             Save changes
           </Button>
           <div className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
-            <div><h3 className="text-lg font-bold font-heading">Payout methods</h3><p className="text-sm text-muted-foreground">Available for {countryCode}: {payoutMethods.join(", ") || "PayPal"}. No payment is sent automatically.</p></div>
+            <div><h3 className="text-sm font-semibold text-foreground">Payout methods</h3><p className="text-sm text-muted-foreground">Available for {countryCode}: {payoutMethods.join(", ") || "PayPal"}. No payment is sent automatically.</p></div>
             {payoutProfiles.length > 0 && <div className="space-y-2">{payoutProfiles.map((profile) => <div key={profile.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 text-sm"><span className="min-w-0 truncate">{profile.label}</span><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Saved</span><Button type="button" variant="outline" size="sm" onClick={() => handleEditPayout(profile)}>Edit</Button></div></div>)}</div>}
             <select value={payoutMethod} onChange={(event) => { setPayoutMethod(event.target.value); setEditingProfileId(null); }} className="h-12 w-full rounded-md border border-border bg-input px-3 text-sm">{payoutMethods.map((method) => <option key={method} value={method}>{method === "bank_transfer" ? "Direct bank transfer" : method === "paypal" ? "PayPal" : method === "opay" ? "Opay" : "PalmPay"}</option>)}</select>
             {selectedMethodAlreadySaved && <p className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-200">A {payoutMethod === "bank_transfer" ? "bank transfer" : payoutMethod} account is already saved. Choose another method or press Edit above to change it.</p>}
@@ -326,8 +304,8 @@ export function ProfilePage() {
             <div className="flex gap-2"><Button type="button" disabled={selectedMethodAlreadySaved} onClick={() => void handleSavePayout()} className="flex-1">{editingProfileId ? "Update payout method" : "Save payout method"}</Button>{editingProfileId && <Button type="button" variant="outline" onClick={handleCancelEditPayout}>Cancel</Button>}</div>
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
-            <div><h3 className="text-lg font-bold font-heading">Contact support</h3><p className="text-sm text-muted-foreground">Send a message to the Rockcity owner. Replies will appear in your notification bell.</p></div>
+          <div className="space-y-4 border-t border-border/60 pt-6">
+            <div><h3 className="text-sm font-semibold text-foreground">Contact support</h3><p className="text-sm text-muted-foreground">Send a message to the Rockcity owner. Replies will appear in your notification bell.</p></div>
             <Input placeholder="Subject" value={supportSubject} onChange={(event) => setSupportSubject(event.target.value)} />
             <textarea className="min-h-28 w-full rounded-md border border-border bg-input px-3 py-3 text-sm" placeholder="Tell us what you need help with" value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} />
             <Button type="button" onClick={() => void handleSendSupport()} className="w-full h-12 rounded-xl font-bold">Send to support</Button>
@@ -338,9 +316,8 @@ export function ProfilePage() {
             type="button"
             variant="outline"
             onClick={() => void logout()}
-            className="w-full h-12 rounded-xl border-destructive/40 bg-transparent font-bold uppercase tracking-wider text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="h-11 w-full border-border text-sm text-muted-foreground hover:text-destructive"
           >
-            <LogOut className="mr-2 h-4 w-4" />
             Log out
           </Button>
         </CardContent>
