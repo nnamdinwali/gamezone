@@ -133,13 +133,28 @@
   }
 }
 
-/* clerk: dark inputs only — do not hide form internals */
+/* clerk: force visible fields on dark page */
 .cl-formFieldInput,
 input.cl-formFieldInput {
   background-color: #18181b !important;
   color: #fafafa !important;
-  border-color: #27272a !important;
+  border: 1px solid #52525b !important;
   -webkit-box-shadow: 0 0 0 1000px #18181b inset !important;
   box-shadow: 0 0 0 1000px #18181b inset !important;
   -webkit-text-fill-color: #fafafa !important;
+}
+.cl-socialButtonsBlockButton {
+  border: 1px solid #52525b !important;
+  background: #18181b !important;
+  color: #fafafa !important;
+}
+.cl-formFieldLabel {
+  color: #d4d4d8 !important;
+}
+.cl-dividerText {
+  color: #a1a1aa !important;
+}
+.cl-formButtonPrimaryIcon,
+.cl-buttonArrowIcon {
+  display: none !important;
 }
