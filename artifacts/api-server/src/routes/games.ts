@@ -2,6 +2,9 @@ import { Router, type Request, type Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { db, gamesTable, gameMilestonesTable } from "@workspace/db";
 import { eq, ilike, or, desc, and } from "drizzle-orm";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -64,31 +67,45 @@ router.get("/games", async (req, res) => {
 });
 
 // POST /games
-router.post("/games", async (req, res) => {
+router.post("/games", upload.single("coverImage"), async (req, res) => {
   if (!(await requireAdmin(req, res))) return;
   try {
     const {
       title,
       description,
       genre,
-      thumbnailUrl,
+      thumbnailUrl: thumbnailUrlField,
       gameUrl,
+      storeUrl,
       androidStoreUrl,
       iosStoreUrl,
       packageName,
       creatorName,
       rewardPerMinute,
     } = req.body;
-    if (!title || !description || !genre || !thumbnailUrl || !gameUrl || !creatorName || rewardPerMinute == null) {
-      return res.status(400).json({ error: "Missing required fields" });
+
+    // Cover image can arrive two ways: an actual uploaded file (admin's
+    // "Store-link APK flow" form) or a plain URL string (older/JSON callers).
+    const uploadedFile = req.file;
+    const thumbnailUrl = uploadedFile
+      ? `data:${uploadedFile.mimetype};base64,${uploadedFile.buffer.toString("base64")}`
+      : thumbnailUrlField;
+
+    // Store-link games (redirect to an app store, no embedded player) don't
+    // have a separate playable URL — the store link doubles as gameUrl.
+    const resolvedAndroidStoreUrl = androidStoreUrl || storeUrl || null;
+    const resolvedGameUrl = gameUrl || storeUrl || null;
+
+    if (!title || !description || !genre || !thumbnailUrl || !resolvedGameUrl || !creatorName || rewardPerMinute == null) {
+      return res.status(400).json({ error: "Missing required fields: title, description, genre, cover image, a game or store URL, creator name, and reward per minute are all required" });
     }
     const [game] = await db.insert(gamesTable).values({
       title,
       description,
       genre,
       thumbnailUrl,
-      gameUrl,
-      androidStoreUrl: androidStoreUrl || null,
+      gameUrl: resolvedGameUrl,
+      androidStoreUrl: resolvedAndroidStoreUrl,
       iosStoreUrl: iosStoreUrl || null,
       packageName: packageName || null,
       creatorName,
