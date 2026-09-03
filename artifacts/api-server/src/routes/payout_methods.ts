@@ -10,7 +10,7 @@ const AVAILABLE_METHODS_BY_COUNTRY: Record<string, string[]> = {
 };
 const DEFAULT_METHODS = ["paypal"];
 
-function maskDetails(method: string, details: Record<string, string>) {
+export function maskDetails(method: string, details: Record<string, string>) {
   const mask = (value: string | undefined) => (value ? `••••${value.slice(-4)}` : "");
   if (method === "paypal") return { email: details.email ?? "" };
   if (method === "bank_transfer")
@@ -29,7 +29,7 @@ const METHOD_DISPLAY_NAMES: Record<string, string> = {
   palmpay: "PalmPay",
 };
 
-function buildLabel(method: string, details: Record<string, string>) {
+export function buildLabel(method: string, details: Record<string, string>) {
   const name = METHOD_DISPLAY_NAMES[method] ?? method;
   if (method === "paypal") return details.email ? `${name} — ${details.email}` : name;
   if (method === "bank_transfer") return details.bankName ? `${name} — ${details.bankName}` : name;
@@ -37,7 +37,7 @@ function buildLabel(method: string, details: Record<string, string>) {
   return identifier ? `${name} — ${identifier}` : name;
 }
 
-function maskedDetailsString(method: string, details: Record<string, string>) {
+export function maskedDetailsString(method: string, details: Record<string, string>) {
   const masked = maskDetails(method, details);
   return Object.values(masked).filter(Boolean).join(" · ");
 }

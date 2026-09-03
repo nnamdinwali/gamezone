@@ -7,8 +7,9 @@ export const earningsTable = pgTable("earnings", {
   userId: integer("user_id").notNull(),
   amount: real("amount").notNull(),
   type: text("type").notNull().default("play"), // play | withdrawal
-  status: text("status").notNull().default("completed"), // pending | completed | rejected
+  status: text("status").notNull().default("completed"), // play: completed|pending|rejected. withdrawal: pending|approved|paid|needs_correction|rejected
   payoutMethodId: integer("payout_method_id"),
+  reviewNote: text("review_note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

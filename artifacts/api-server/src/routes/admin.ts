@@ -1,7 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
-import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable, earningsTable } from "@workspace/db";
+import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable, earningsTable, payoutMethodsTable } from "@workspace/db";
 import { desc, eq, sql } from "drizzle-orm";
+import { maskDetails, buildLabel, maskedDetailsString } from "./payout_methods";
 
 const router = Router();
 const ownerEmail = process.env.ADMIN_OWNER_EMAIL?.trim().toLowerCase();
@@ -201,8 +202,12 @@ router.get("/admin/withdrawals", async (req, res) => {
         id: earningsTable.id,
         userId: earningsTable.userId,
         username: usersTable.username,
+        email: usersTable.email,
+        countryCode: usersTable.countryCode,
+        currencyCode: usersTable.currencyCode,
         amount: earningsTable.amount,
         status: earningsTable.status,
+        reviewNote: earningsTable.reviewNote,
         payoutMethodId: earningsTable.payoutMethodId,
         createdAt: earningsTable.createdAt,
       })
@@ -211,16 +216,30 @@ router.get("/admin/withdrawals", async (req, res) => {
       .where(eq(earningsTable.type, "withdrawal"))
       .orderBy(desc(earningsTable.createdAt));
 
+    const payoutMethodIds = [...new Set(withdrawals.map((w) => w.payoutMethodId).filter((id): id is number => id !== null))];
+    const payoutMethodRows = payoutMethodIds.length
+      ? await db.select().from(payoutMethodsTable).where(sql`${payoutMethodsTable.id} IN (${sql.join(payoutMethodIds.map((id) => sql`${id}`), sql`, `)})`)
+      : [];
+    const payoutMethodById = new Map(payoutMethodRows.map((p) => [p.id, p]));
+
     res.json(
-      withdrawals.map((w) => ({
-        id: w.id,
-        userId: w.userId,
-        username: w.username,
-        amount: Math.abs(w.amount),
-        status: w.status,
-        payoutMethodId: w.payoutMethodId,
-        createdAt: w.createdAt.toISOString(),
-      })),
+      withdrawals.map((w) => {
+        const profile = w.payoutMethodId ? payoutMethodById.get(w.payoutMethodId) : undefined;
+        const details = profile ? (JSON.parse(profile.details) as Record<string, string>) : {};
+        return {
+          id: w.id,
+          userId: w.userId,
+          amount: Math.abs(w.amount),
+          currencyCode: w.currencyCode ?? "NGN",
+          status: w.status,
+          reviewNote: w.reviewNote,
+          createdAt: w.createdAt.toISOString(),
+          user: { username: w.username ?? "Unknown", email: w.email ?? "", countryCode: w.countryCode },
+          payoutProfile: profile
+            ? { method: profile.method, label: buildLabel(profile.method, details), maskedDetails: maskedDetailsString(profile.method, details), details: maskDetails(profile.method, details) }
+            : { method: "unknown", label: "Payout method removed", maskedDetails: "", details: {} },
+        };
+      }),
     );
   } catch (err) {
     req.log.error(err);
@@ -228,20 +247,21 @@ router.get("/admin/withdrawals", async (req, res) => {
   }
 });
 
-// PATCH /admin/withdrawals/:id/status — approve or reject a withdrawal
+// PATCH /admin/withdrawals/:id/status — approve, mark paid, request correction, or reject a withdrawal
 router.patch("/admin/withdrawals/:id/status", async (req, res) => {
   if (!(await requireAdmin(req, res))) return;
   try {
     const id = Number(req.params.id);
-    const { status } = req.body as { status?: "completed" | "rejected" };
-    if (status !== "completed" && status !== "rejected") {
-      return res.status(400).json({ error: "status must be 'completed' or 'rejected'" });
+    const { status, reviewNote } = req.body as { status?: string; reviewNote?: string };
+    const validStatuses = ["pending", "approved", "paid", "needs_correction", "rejected"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
     }
 
     const [withdrawal] = await db.select().from(earningsTable).where(eq(earningsTable.id, id));
     if (!withdrawal || withdrawal.type !== "withdrawal") return res.status(404).json({ error: "Withdrawal not found" });
 
-    // Rejecting refunds the balance back to the player.
+    // Rejecting refunds the balance back to the player, once.
     if (status === "rejected" && withdrawal.status !== "rejected") {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.id, withdrawal.userId));
       if (user) {
@@ -249,8 +269,49 @@ router.patch("/admin/withdrawals/:id/status", async (req, res) => {
       }
     }
 
-    const [updated] = await db.update(earningsTable).set({ status }).where(eq(earningsTable.id, id)).returning();
-    res.json({ id: updated.id, status: updated.status });
+    const [updated] = await db
+      .update(earningsTable)
+      .set({ status, ...(reviewNote !== undefined ? { reviewNote } : {}) })
+      .where(eq(earningsTable.id, id))
+      .returning();
+    res.json({ id: updated.id, status: updated.status, reviewNote: updated.reviewNote });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /admin/active-sessions — players currently mid-session, right now
+router.get("/admin/active-sessions", async (req, res) => {
+  if (!(await requireAdmin(req, res))) return;
+  try {
+    const rows = await db
+      .select({
+        id: playSessionsTable.id,
+        userId: playSessionsTable.userId,
+        username: usersTable.username,
+        email: usersTable.email,
+        gameId: playSessionsTable.gameId,
+        gameTitle: gamesTable.title,
+        startedAt: playSessionsTable.startedAt,
+      })
+      .from(playSessionsTable)
+      .leftJoin(usersTable, eq(playSessionsTable.userId, usersTable.id))
+      .leftJoin(gamesTable, eq(playSessionsTable.gameId, gamesTable.id))
+      .where(eq(playSessionsTable.status, "active"))
+      .orderBy(desc(playSessionsTable.startedAt));
+
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        username: r.username ?? "Unknown",
+        email: r.email ?? "",
+        gameId: r.gameId,
+        gameTitle: r.gameTitle ?? "Unknown game",
+        startedAt: r.startedAt.toISOString(),
+      })),
+    );
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

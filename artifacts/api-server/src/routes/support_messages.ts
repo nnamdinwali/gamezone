@@ -58,7 +58,7 @@ router.post("/support/messages", async (req, res) => {
   }
 });
 
-// GET /admin/support/messages — every open thread, grouped by user, for the admin inbox
+// GET /admin/support/messages — every player-submitted message, for the admin inbox
 router.get("/admin/support/messages", async (req, res) => {
   if (!(await requireAdmin(req, res))) return;
   try {
@@ -67,28 +67,30 @@ router.get("/admin/support/messages", async (req, res) => {
         id: supportMessagesTable.id,
         userId: supportMessagesTable.userId,
         username: usersTable.username,
+        email: usersTable.email,
+        countryCode: usersTable.countryCode,
         subject: supportMessagesTable.subject,
         message: supportMessagesTable.message,
-        fromAdmin: supportMessagesTable.fromAdmin,
         readAt: supportMessagesTable.readAt,
         createdAt: supportMessagesTable.createdAt,
       })
       .from(supportMessagesTable)
       .leftJoin(usersTable, eq(supportMessagesTable.userId, usersTable.id))
+      .where(eq(supportMessagesTable.fromAdmin, false))
       .orderBy(desc(supportMessagesTable.createdAt));
 
-    return res.json(
-      messages.map((m) => ({
+    return res.json({
+      messages: messages.map((m) => ({
         id: m.id,
         userId: m.userId,
-        username: m.username,
         subject: m.subject,
         message: m.message,
-        fromAdmin: m.fromAdmin,
+        status: m.readAt ? "read" : "open",
         readAt: m.readAt ? m.readAt.toISOString() : null,
         createdAt: m.createdAt.toISOString(),
+        user: { username: m.username ?? "Player", email: m.email ?? "", countryCode: m.countryCode ?? null },
       })),
-    );
+    });
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });
