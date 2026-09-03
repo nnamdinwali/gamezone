@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
-import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable, earningsTable, payoutMethodsTable } from "@workspace/db";
+import { db, gameMilestonesTable, gamesTable, playSessionsTable, usersTable, earningsTable, payoutMethodsTable, notificationsTable } from "@workspace/db";
 import { desc, eq, sql } from "drizzle-orm";
 import { maskDetails, buildLabel, maskedDetailsString } from "./payout_methods";
 
@@ -312,6 +312,30 @@ router.get("/admin/active-sessions", async (req, res) => {
         startedAt: r.startedAt.toISOString(),
       })),
     );
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /admin/notifications — admin manually sends a notification to a specific player's bell
+router.post("/admin/notifications", async (req, res) => {
+  if (!(await requireAdmin(req, res))) return;
+  try {
+    const { userId, title, message } = req.body as { userId?: number; title?: string; message?: string };
+    if (!userId || !title?.trim() || !message?.trim()) {
+      return res.status(400).json({ error: "userId, title, and message are required" });
+    }
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const [created] = await db
+      .insert(notificationsTable)
+      .values({ userId, title: title.trim(), message: message.trim() })
+      .returning();
+
+    res.status(201).json({ id: created.id, userId: created.userId, title: created.title, message: created.message, createdAt: created.createdAt.toISOString() });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
