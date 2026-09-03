@@ -24,6 +24,10 @@ export async function requireAdmin(req: Request, res: Response) {
       (address) => address.emailAddress.trim().toLowerCase() === ownerEmail,
     );
     if (!ownsAdminEmail) {
+      req.log.warn(
+        { seenEmails: clerkUser.emailAddresses.map((a) => a.emailAddress), expected: ownerEmail },
+        "Admin access denied: signed-in Clerk account's emails did not match ADMIN_OWNER_EMAIL",
+      );
       res.status(403).json({ error: "Owner administrator access required" });
       return false;
     }
