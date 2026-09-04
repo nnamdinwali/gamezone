@@ -1,34 +1,12 @@
 import { Router, type Request, type Response } from "express";
-import { clerkClient, getAuth } from "@clerk/express";
 import { db, gamesTable, gameMilestonesTable } from "@workspace/db";
 import { eq, ilike, or, desc, and } from "drizzle-orm";
 import multer from "multer";
+import { requireAdmin } from "./admin";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const router = Router();
-
-async function requireAdmin(req: Request, res: Response) {
-  const userId = getAuth(req).userId;
-  if (!userId) {
-    res.status(401).json({ error: "Authentication required" });
-    return false;
-  }
-
-  try {
-    const user = await clerkClient.users.getUser(userId);
-    const role = (user.publicMetadata as { role?: unknown } | undefined)?.role;
-    if (role !== "admin") {
-      res.status(403).json({ error: "Administrator access required" });
-      return false;
-    }
-    return true;
-  } catch (err) {
-    req.log.error(err);
-    res.status(401).json({ error: "Unable to verify administrator access" });
-    return false;
-  }
-}
 
 // GET /games
 router.get("/games", async (req, res) => {
