@@ -74,8 +74,8 @@ router.post("/games", upload.single("coverImage"), async (req, res) => {
     const resolvedAndroidStoreUrl = androidStoreUrl || storeUrl || null;
     const resolvedGameUrl = gameUrl || storeUrl || null;
 
-    if (!title || !description || !genre || !thumbnailUrl || !resolvedGameUrl || !creatorName || rewardPerMinute == null) {
-      return res.status(400).json({ error: "Missing required fields: title, description, genre, cover image, a game or store URL, creator name, and reward per minute are all required" });
+    if (!title || !description || !genre || !thumbnailUrl || !resolvedGameUrl || !creatorName) {
+      return res.status(400).json({ error: "Missing required fields: title, description, genre, cover image, and a game or store URL are all required" });
     }
     const [game] = await db.insert(gamesTable).values({
       title,
@@ -87,7 +87,7 @@ router.post("/games", upload.single("coverImage"), async (req, res) => {
       iosStoreUrl: iosStoreUrl || null,
       packageName: packageName || null,
       creatorName,
-      rewardPerMinute: Number(rewardPerMinute),
+      ...(rewardPerMinute != null && rewardPerMinute !== "" ? { rewardPerMinute: Number(rewardPerMinute) } : {}),
     }).returning();
     return res.status(201).json({
       id: game.id,

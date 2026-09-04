@@ -4,7 +4,7 @@ import { useGetGame, getGetGameQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, Coins, ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
+import { Play, ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
 import { apiFetch } from "@/lib/api-fetch";
@@ -133,15 +133,6 @@ export function GameDetailPage() {
         {/* Sidebar Info */}
         <div className="space-y-6">
           <div className="p-6 rounded-3xl bg-secondary/10 border border-secondary/20 flex flex-col gap-6">
-            <div className="text-center space-y-2">
-              <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Earning Rate</p>
-              <div className="text-4xl font-mono font-bold text-accent flex items-center justify-center gap-2">
-                <Coins className="w-8 h-8" />
-                {game.rewardPerMinute}
-              </div>
-              <p className="text-xs text-muted-foreground">points per minute played</p>
-            </div>
-
             <Button
               size="lg"
               onClick={handlePlayAndEarn}

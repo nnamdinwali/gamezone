@@ -65,7 +65,7 @@ export function GamesPage() {
                     <h3 className="mb-1 line-clamp-1 font-heading text-xl font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-primary">{game.title}</h3>
                     <p className="mb-4 line-clamp-2 flex-1 text-sm text-muted-foreground">{game.description}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-accent"><Coins className="h-4 w-4" />{game.rewardPerMinute} pts/min</div>
+                      {game.rewardPerMinute ? <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-accent"><Coins className="h-4 w-4" />{game.rewardPerMinute} pts/min</div> : <span />}
                       <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground"><Users className="h-3 w-3" />{game.playCount.toLocaleString()}</div>
                     </div>
                   </CardContent>
