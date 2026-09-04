@@ -9,6 +9,7 @@ import {
   intelligenceConversationsTable,
   intelligenceMessagesTable,
   gameAuditArtifactsTable,
+  supportMessagesTable,
 } from "@workspace/db";
 import { eq, desc, gte, sql, lt } from "drizzle-orm";
 import { requireAdmin } from "./admin";
@@ -147,9 +148,30 @@ async function answerQuestion(question: string, gameId?: number): Promise<string
   const [{ count: totalUsers }] = await db.select({ count: sql<number>`count(*)::int` }).from(usersTable);
   const [{ count: totalGames }] = await db.select({ count: sql<number>`count(*)::int` }).from(gamesTable);
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const activeUsers = await db.selectDistinct({ userId: playSessionsTable.userId }).from(playSessionsTable).where(gte(playSessionsTable.startedAt, dayAgo));
   const [{ count: bannedCount }] = await db.select({ count: sql<number>`count(*)::int` }).from(usersTable).where(sql`${usersTable.bannedAt} is not null`);
   const [{ count: pendingWithdrawals }] = await db.select({ count: sql<number>`count(*)::int` }).from(earningsTable).where(sql`${earningsTable.type} = 'withdrawal' and ${earningsTable.status} = 'pending'`);
+
+  // Entity lookup: does the question mention a real username or game title
+  // by name? If so, answer about that specific entity directly, regardless
+  // of which category keyword also matched.
+  const allUsers = await db.select({ id: usersTable.id, username: usersTable.username }).from(usersTable);
+  const mentionedUser = allUsers.find((u) => u.username && q.includes(u.username.toLowerCase()));
+  const allGames = await db.select({ id: gamesTable.id, title: gamesTable.title }).from(gamesTable);
+  const mentionedGame = allGames.find((g) => g.title && q.includes(g.title.toLowerCase()));
+
+  if (mentionedUser && (q.includes("who is") || q.includes("player") || q.includes("about") || q.includes("tell me"))) {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, mentionedUser.id));
+    const [{ sessionCount }] = await db.select({ sessionCount: sql<number>`count(*)::int` }).from(playSessionsTable).where(eq(playSessionsTable.userId, mentionedUser.id));
+    return `${user.username}: balance ${user.balance.toFixed(2)}, ${user.totalEarnings.toFixed(2)} earned lifetime, ${sessionCount} play session(s), ${user.gamesPlayed} game(s) played, ${user.bannedAt ? `banned (${user.banReason ?? "no reason given"})` : "not banned"}, joined ${user.createdAt.toISOString().slice(0, 10)}.`;
+  }
+
+  if (mentionedGame && !gameId) {
+    const [game] = await db.select().from(gamesTable).where(eq(gamesTable.id, mentionedGame.id));
+    const [{ sessionCount }] = await db.select({ sessionCount: sql<number>`count(*)::int` }).from(playSessionsTable).where(eq(playSessionsTable.gameId, mentionedGame.id));
+    return `${game.title}: ${game.playCount} total plays, ${sessionCount} recorded sessions, ${game.genre}, rating ${game.rating.toFixed(1)}, paying ${game.rewardPerMinute}/minute.`;
+  }
 
   if (q.includes("unusual") || q.includes("outlier") || q.includes("suspicious")) {
     const [{ avgAmount }] = await db.select({ avgAmount: sql<number>`coalesce(avg(${earningsTable.amount}), 0)` }).from(earningsTable).where(eq(earningsTable.type, "play"));
@@ -164,6 +186,46 @@ async function answerQuestion(question: string, gameId?: number): Promise<string
 
   if (q.includes("inactive")) {
     return `${totalUsers - activeUsers.length} of ${totalUsers} total players have not played in the last 24 hours.`;
+  }
+
+  if (q.includes("signup") || q.includes("sign up") || q.includes("new player") || q.includes("new user")) {
+    const [{ today }] = await db.select({ today: sql<number>`count(*)::int` }).from(usersTable).where(gte(usersTable.createdAt, dayAgo));
+    const [{ week }] = await db.select({ week: sql<number>`count(*)::int` }).from(usersTable).where(gte(usersTable.createdAt, weekAgo));
+    return `${today} new signup(s) in the last 24 hours, ${week} in the last 7 days, out of ${totalUsers} total players.`;
+  }
+
+  if (q.includes("retention") || q.includes("come back") || q.includes("returning")) {
+    const sessionCounts = await db.select({ userId: playSessionsTable.userId, count: sql<number>`count(*)::int` }).from(playSessionsTable).groupBy(playSessionsTable.userId);
+    const returning = sessionCounts.filter((s) => s.count > 1).length;
+    const playersWithSessions = sessionCounts.length;
+    if (!playersWithSessions) return "No play sessions recorded yet — retention will be measurable once players start playing.";
+    return `${returning} of ${playersWithSessions} players who have ever played (${((returning / playersWithSessions) * 100).toFixed(0)}%) have come back for more than one session.`;
+  }
+
+  if (q.includes("top earner") || q.includes("highest earn") || q.includes("who earns")) {
+    const top = await db.select({ username: usersTable.username, totalEarnings: usersTable.totalEarnings }).from(usersTable).orderBy(desc(usersTable.totalEarnings)).limit(5);
+    if (!top.length || top[0].totalEarnings === 0) return "No earnings recorded yet.";
+    return `Top earners: ${top.map((u) => `${u.username} (${u.totalEarnings.toFixed(2)})`).join(", ")}.`;
+  }
+
+  if (q.includes("top game") || q.includes("most played") || q.includes("popular game") || q.includes("leaderboard")) {
+    const top = await db.select({ title: gamesTable.title, playCount: gamesTable.playCount }).from(gamesTable).orderBy(desc(gamesTable.playCount)).limit(5);
+    if (!top.length || top[0].playCount === 0) return "No games have recorded plays yet.";
+    return `Top games by plays: ${top.map((g) => `${g.title} (${g.playCount})`).join(", ")}.`;
+  }
+
+  if (q.includes("revenue") || q.includes("total earning") || q.includes("how much") && q.includes("paid")) {
+    const [{ total }] = await db.select({ total: sql<number>`coalesce(sum(${earningsTable.amount}), 0)::real` }).from(earningsTable).where(eq(earningsTable.type, "play"));
+    const [{ weekTotal }] = await db.select({ weekTotal: sql<number>`coalesce(sum(${earningsTable.amount}), 0)::real` }).from(earningsTable).where(sql`${earningsTable.type} = 'play' and ${earningsTable.createdAt} >= ${weekAgo.toISOString()}`);
+    return `${total.toFixed(2)} paid out to players all-time, ${weekTotal.toFixed(2)} in the last 7 days.`;
+  }
+
+  if (q.includes("support") || q.includes("ticket") || q.includes("message")) {
+    const [{ open }] = await db
+      .select({ open: sql<number>`count(*)::int` })
+      .from(supportMessagesTable)
+      .where(sql`${supportMessagesTable.fromAdmin} = false and ${supportMessagesTable.readAt} is null`);
+    return `${open} unread player support message(s) waiting in the inbox.`;
   }
 
   if (q.includes("active")) {
@@ -186,7 +248,7 @@ async function answerQuestion(question: string, gameId?: number): Promise<string
     }
   }
 
-  return `Platform snapshot: ${totalUsers} total players, ${totalGames} games live, ${activeUsers.length} active in the last 24h, ${bannedCount} banned, ${pendingWithdrawals} withdrawal(s) pending review. Ask about "unusual activity", "inactive players", "withdrawals", or "bans" for more detail.`;
+  return `Platform snapshot: ${totalUsers} total players, ${totalGames} games live, ${activeUsers.length} active in the last 24h, ${bannedCount} banned, ${pendingWithdrawals} withdrawal(s) pending review. Ask about a specific player or game by name, or try "unusual activity", "signups", "retention", "top earners", "top games", "revenue", "support", "withdrawals", or "bans".`;
 }
 
 router.post("/admin/intelligence/conversations/:id/messages", async (req, res) => {
