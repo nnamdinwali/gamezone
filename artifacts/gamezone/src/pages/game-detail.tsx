@@ -4,7 +4,7 @@ import { useGetGame, getGetGameQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Circle, CheckCircle2 } from "lucide-react";
 import { resolveGameImageUrl } from "@/lib/media";
 import { openStoreUrl } from "@/lib/store-links";
 import { apiFetch } from "@/lib/api-fetch";
@@ -134,11 +134,10 @@ export function GameDetailPage() {
         <div className="space-y-6">
           <div className="p-6 rounded-3xl bg-secondary/10 border border-secondary/20 flex flex-col gap-6">
             <Button
-              size="lg"
               onClick={handlePlayAndEarn}
-              className="w-full h-16 text-lg font-bold shadow-[0_0_40px_-10px_hsl(var(--primary))]"
+              className="w-full rounded-xl bg-primary py-6 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
-              PLAY AND EARN <Play className="w-6 h-6 ml-2 fill-current" />
+              Play and Earn
             </Button>
           </div>
 
